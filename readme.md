@@ -2,7 +2,19 @@
 
 Neovim plugin for nitpick.
 
+
 ## Status
+
+Experimental.
+
+
+## Development
+
+Development for this plugin is done in the
+[nitpick-dev/editors](https://github.com/nitpick-dev/editors/tree/main/nvim)
+monorepo and released to
+[nitpick-dev/nvim](https://github.com/nitpick-dev/nvim).
+
 
 # Getting Started
 
@@ -12,7 +24,14 @@ something new. Most likely, these are already installed.
 
 ## Requirements
 
+### Diffing tool
+
+A diffing tool is required to start reviews.
+
+#### Supported
+
 [diffview](https://github.com/sindrets/diffview.nvim)
+
 
 ## Setup
 
