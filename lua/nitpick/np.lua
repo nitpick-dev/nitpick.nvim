@@ -1,11 +1,7 @@
 local ffi = require("ffi")
 
---FIXME: remove hardcoded path. let's make this an option so we can have one
---path for local dev, another for releases
-local ok, libnitpick = pcall(ffi.load, "./zig-out/lib/libnitpick.so")
-if not ok then
-	return false
-end
+---@type ffi.namespace*
+local libnitpick
 
 ffi.cdef [[
 typedef void* np_app;
@@ -22,6 +18,25 @@ int np_end_review(np_app app, char* buf);
 local lib = {
 	app = nil,
 }
+
+---Loads libnitpick
+---@param lib_path string? User provided path to libnitpick
+---@return boolean success
+function lib.load(lib_path)
+	local sysname = vim.loop.os_uname().sysname:lower()
+	--FIXME: we should support windows... maybe we can change macos to by so
+	--instead of dylib
+	local ext = sysname == "linux" and "so" or "dylib"
+	local default_path = string.format("./libnitpick.%s", ext)
+
+	local ok, library = pcall(ffi.load, vim.fn.expand(lib_path) or default_path)
+	if not ok then
+		return false
+	end
+
+	libnitpick = library
+	return true
+end
 
 --HACK: adding these to the global scope to prevent them failing in c land...
 --we should probably add a copy over there or something so they can be safely

@@ -2,14 +2,22 @@ local diffview = require("diffview")
 
 local np = require("nitpick.np")
 
+---@class NitpickOptions
+---@field lib_path string? Overrides the default path for libnitpick
+
 ---@class NitpickConfig
 ---@field np Nitpick?
 local nitpick = {
 	np = nil,
 }
 
-function nitpick.setup()
-	if not np then
+---@param user_opts NitpickOptions?
+function nitpick.setup(user_opts)
+	local opts = user_opts or {}
+
+	local ok = np.load(opts.lib_path)
+	if not ok then
+		vim.notify("Failed to load libnitpick", vim.log.levels.ERROR)
 		return
 	end
 
@@ -17,8 +25,6 @@ function nitpick.setup()
 	local np_data_path = vim.fn.stdpath("data");
 	nitpick.np = np:new(repo_name, np_data_path)
 end
-
-nitpick.setup()
 
 ---Get the file for the repo
 ---@param mode string
