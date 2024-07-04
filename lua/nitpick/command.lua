@@ -22,7 +22,7 @@ end
 ---@param cmd_line string Unparsed command line
 ---@return string[] commands Filtered list of possible commands
 function command.complete(cmd_line)
-	local available_commands = {"start_review", "end_review",}
+	local available_commands = { "start_review", "end_review" }
 
 	local tokens = vim.split(cmd_line, "%s+")
 	local commands = vim.tbl_filter(

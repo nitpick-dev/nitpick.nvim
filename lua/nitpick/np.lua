@@ -19,7 +19,7 @@ local lib = {
 	app = nil,
 }
 
----Loads libnitpick
+---Load libnitpick
 ---@param lib_path string? User provided path to libnitpick
 ---@return boolean success
 function lib.load(lib_path)
@@ -41,7 +41,9 @@ end
 --HACK: adding these to the global scope to prevent them failing in c land...
 --we should probably add a copy over there or something so they can be safely
 --cleaned in lua
+---@type ffi.cdata*
 local c_repo_name
+---@type ffi.cdata*
 local c_np_data_path
 
 ---@param repo_name string
