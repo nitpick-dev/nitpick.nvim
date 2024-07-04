@@ -27,9 +27,9 @@ function lib.load(lib_path)
 	--FIXME: we should support windows... maybe we can change macos to by so
 	--instead of dylib
 	local ext = sysname == "linux" and "so" or "dylib"
-	local default_path = string.format("./libnitpick.%s", ext)
+	local path = lib_path and vim.fn.expand(lib_path) or string.format("./libnitpick.%s", ext)
 
-	local ok, library = pcall(ffi.load, vim.fn.expand(lib_path) or default_path)
+	local ok, library = pcall(ffi.load, path)
 	if not ok then
 		return false
 	end
