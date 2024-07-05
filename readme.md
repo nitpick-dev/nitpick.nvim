@@ -43,14 +43,14 @@ A diffing tool is required to start reviews.
 All commands are available through a single entry point: `Nitpick`.
 
 
-## start_review
+## start
 
 Starts a reivew. If provided a commit, use that as a starting point for the
 review. This is useful when a review has not yet been conducted, or if including
 older commits is desired.
 
 
-## end_review
+## end
 
 Compeletes the review and caches the ending commit to be the staritng point for
-the next time `start_review` is called.
+the next time `start` is called.

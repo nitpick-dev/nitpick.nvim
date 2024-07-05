@@ -3,26 +3,35 @@ local nitpick = require("nitpick")
 local command = {}
 
 ---@class Cmd
----@field name "start" | "end"
+---@field name string
+---@field fn string
 ---@field args string?
+
+---Maps a user command to the function name used in `nitpick`.
+local dispatch_map = {
+	--FIXME: it'd be cooler to be able to use the nitpick function directly here,
+	--but there's an issue with stubbing in the tests where the stub doesn't
+	--stub..
+	["start"] = "start_review",
+	["end"] = "end_review",
+}
 
 ---@param args string[]
 ---@return Cmd
 local function parse(args)
-	---@type Cmd
-	local cmd = {
+	return {
 		name = args[1],
+		fn = dispatch_map[args[1]],
 		args = args[2],
 	}
-
-	return cmd
 end
+
 
 --FIXME: do we want to parse the command line before passing it through?
 ---@param cmd_line string Unparsed command line
 ---@return string[] commands Filtered list of possible commands
 function command.complete(cmd_line)
-	local available_commands = { "start_review", "end_review" }
+	local available_commands = { "start", "end" }
 
 	local tokens = vim.split(cmd_line, "%s+")
 	local commands = vim.tbl_filter(
@@ -39,7 +48,7 @@ end
 function command.dispatch(args)
 	local cmd = parse(args)
 
-	if nitpick[cmd.name] == nil then
+	if cmd.fn == nil then
 		--FIXME: this error is processed in the test.. figure out how to turn it off
 		vim.notify(
 			string.format("Invalid command %s", cmd.name),
@@ -48,7 +57,7 @@ function command.dispatch(args)
 		return false
 	end
 
-	nitpick[cmd.name](cmd.args)
+	nitpick[cmd.fn](cmd.args)
 
 	return true
 end
