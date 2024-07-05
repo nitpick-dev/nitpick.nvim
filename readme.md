@@ -2,19 +2,12 @@
 
 Neovim plugin for nitpick.
 
-
-## Status
-
-Experimental.
-
-
-## Development
-
-Development for this plugin is done in the
+**Notice:** Development for this plugin is done in the
 [nitpick-dev/editors](https://github.com/nitpick-dev/editors/tree/main/nvim)
 monorepo and released to
 [nitpick-dev/nvim](https://github.com/nitpick-dev/nvim).
 
+**Status:** it might work ¯\_(ツ)_/¯
 
 # Getting Started
 
