@@ -24,8 +24,7 @@ local lib = {
 ---@return boolean success
 function lib.load(lib_path)
 	local sysname = vim.loop.os_uname().sysname:lower()
-	--FIXME: we should support windows... maybe we can change macos to by so
-	--instead of dylib
+	--FIXME: windows support
 	local ext = sysname == "linux" and "so" or "dylib"
 	local path = lib_path and vim.fn.expand(lib_path) or string.format("./libnitpick.%s", ext)
 

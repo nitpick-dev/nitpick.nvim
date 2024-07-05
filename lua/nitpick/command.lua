@@ -27,7 +27,6 @@ local function parse(args)
 end
 
 
---FIXME: do we want to parse the command line before passing it through?
 ---@param cmd_line string Unparsed command line
 ---@return string[] commands Filtered list of possible commands
 function command.complete(cmd_line)
