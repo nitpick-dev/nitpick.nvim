@@ -30,9 +30,12 @@ A diffing tool is required to display the diffs while conducting a review.
 When no previous review has been detected, nitpick will prompt the user for a
 starting point using a picker.
 
-### Supported
+Only one picker is required, there is no need to install both.
+
+#### Supported
 
 [Fzf-Lua](https://github.com/ibhagwan/fzf-lua)
+
 [telescope](https://github.com/nvim-telescope/telescope.nvim)
 
 
