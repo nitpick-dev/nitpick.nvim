@@ -3,12 +3,24 @@ local stub = require("luassert.stub")
 
 local nitpick = require("nitpick")
 local np = require("nitpick.np")
+local onboarder = require("nitpick.onboarder")
 
 local test = it
 
 describe("nitpick", function()
 	before_each(function()
 		nitpick.np = np
+	end)
+
+	test("start onboarding if no previous review was found", function()
+		local onboarder_start = stub(onboarder, "start")
+
+		local start_review = stub(np, "start_review")
+		start_review.returns("")
+
+		nitpick.start_review()
+
+		assert.stub(onboarder_start).called(1)
 	end)
 
 	test("start a review", function()
