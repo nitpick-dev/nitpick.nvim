@@ -7,7 +7,7 @@ Neovim plugin for nitpick.
 monorepo and released to
 [nitpick-dev/nvim](https://github.com/nitpick-dev/nvim).
 
-**Status:** it might work ¯\_(ツ)_/¯
+**Status:** it might work ¯\\_(ツ)_/¯
 
 # Getting Started
 
@@ -19,11 +19,21 @@ something new. Most likely, these are already installed.
 
 ### Diffing tool
 
-A diffing tool is required to start reviews.
+A diffing tool is required to display the diffs while conducting a review.
 
 #### Supported
 
 [diffview](https://github.com/sindrets/diffview.nvim)
+
+### Pickers
+
+When no previous review has been detected, nitpick will prompt the user for a
+starting point using a picker.
+
+### Supported
+
+[Fzf-Lua](https://github.com/ibhagwan/fzf-lua)
+[telescope](https://github.com/nvim-telescope/telescope.nvim)
 
 
 ## Setup
@@ -36,14 +46,23 @@ A diffing tool is required to start reviews.
 All commands are available through a single entry point: `Nitpick`.
 
 
-## start
+## start [commit]
 
-Starts a reivew. If provided a commit, use that as a starting point for the
-review. This is useful when a review has not yet been conducted, or if including
-older commits is desired.
+Starts a reivew.
+
+If provided a commit, use that as a starting point for the review. This is
+useful when a review has not yet been conducted, or if including older commits
+is desired. This command does not affect the state of the reviews. Quiting the
+review (`DiffviewClose`, `:qa!`, etc) will preserve the previous commit.
+
+When a previous review has not been detected, a [picker](#pickers) for commits
+will open. The selected commit will become the starting point for the review.
+Similar to passing a speific commit to the `Nitpick start`, this will not affect
+the overall state of reviews. Unless `Nitpick end` was invoked to mark the next
+starting point, a picker will be presented on the next `Nitpick start`.
 
 
 ## end
 
-Compeletes the review and caches the ending commit to be the staritng point for
-the next time `start` is called.
+Ends a reivew. The state of the review is updated to the HEAD commit and will
+become the starting point for the nexe `Nitpick start`.

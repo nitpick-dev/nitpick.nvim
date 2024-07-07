@@ -1,6 +1,7 @@
 local diffview = require("diffview")
 
 local np = require("nitpick.np")
+local onboarder = require("nitpick.onboarder")
 
 ---@class NitpickOptions
 ---@field lib_path string? Overrides the default path for libnitpick
@@ -37,15 +38,13 @@ function nitpick.start_review(start_commit)
 	end
 
 	local commit = nitpick.np:start_review()
-
-	-- FIXME: make a better experience for starting a review if there hasn't been
-	-- one done yet
-	if commit == "" then
-		vim.notify("You have not conducted a review yet...")
-		return
+	if commit ~= nil and commit ~= "" then
+		diffview.open(commit, "HEAD")
+	else
+		onboarder.start(function(selected_commit)
+			diffview.open(selected_commit, "HEAD")
+		end)
 	end
-
-	diffview.open(commit, "HEAD")
 end
 
 ---Completes the review by saving the current commit to the config file
