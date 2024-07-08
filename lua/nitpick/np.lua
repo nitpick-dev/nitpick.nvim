@@ -26,7 +26,9 @@ function lib.load(lib_path)
 	local sysname = vim.loop.os_uname().sysname:lower()
 	--FIXME: windows support
 	local ext = sysname == "linux" and "so" or "dylib"
-	local path = lib_path and vim.fn.expand(lib_path) or string.format("./libnitpick.%s", ext)
+	local sourced_file = vim.fn.fnamemodify(vim.fs.normalize(debug.getinfo(2, "S").source:sub(2)), ":p")
+	local plugin_root = vim.fn.fnamemodify(sourced_file, ":h:h:h")
+	local path = lib_path and vim.fn.expand(lib_path) or string.format("%s/libnitpick.%s", plugin_root, ext)
 
 	local ok, library = pcall(ffi.load, path)
 	if not ok then
