@@ -5,7 +5,7 @@ Neovim plugin for nitpick.
 **Notice:** Development for this plugin is done in the
 [nitpick-dev/editors](https://github.com/nitpick-dev/editors/tree/main/nvim)
 monorepo and released to
-[nitpick-dev/nvim](https://github.com/nitpick-dev/nvim).
+[nitpick-dev/nitpick.nvim](https://github.com/nitpick-dev/nitpick.nvim).
 
 **Status:** it might work ¯\\_(ツ)_/¯
 
@@ -55,7 +55,7 @@ Starts a reivew.
 
 If provided a commit, use that as a starting point for the review. This is
 useful when a review has not yet been conducted, or if including older commits
-is desired. This command does not affect the state of the reviews. Quiting the
+is desired. This command does not affect the state of the reviews. Quitting the
 review (`DiffviewClose`, `:qa!`, etc) will preserve the previous commit.
 
 When a previous review has not been detected, a [picker](#pickers) for commits
