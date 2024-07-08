@@ -22,7 +22,8 @@ print("filename: " .. filename)
 
 vim.fn.system({
 	"curl",
-	"https://github.com/nitpick-dev/nvim/releases/download/dev/" .. filename,
+	--FIXME: use the base repo url
+	"https://github.com/nitpick-dev/nitpick.nvim/releases/download/dev/" .. filename,
 	"-LOv",
 })
 
