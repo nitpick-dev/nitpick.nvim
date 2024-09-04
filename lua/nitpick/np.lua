@@ -6,7 +6,7 @@ local libnitpick
 ffi.cdef [[
 typedef void* np_app;
 
-np_app np_new(char* repo_name, char* base_path);
+np_app np_new(char* server_url, char* repo_name, char* base_path);
 void np_free(np_app app);
 
 int np_start_review(np_app app, char* buf);
@@ -43,6 +43,8 @@ end
 --we should probably add a copy over there or something so they can be safely
 --cleaned in lua
 ---@type ffi.cdata*
+local c_server_url
+---@type ffi.cdata*
 local c_repo_name
 ---@type ffi.cdata*
 local c_np_data_path
@@ -51,13 +53,17 @@ local c_np_data_path
 ---@param np_data_path string
 ---@return Nitpick
 function lib:new(repo_name, np_data_path)
+	local server_url = "not_yet_implemented"
+
+	c_server_url = ffi.new("char[?]", #server_url + 1)
 	c_repo_name = ffi.new("char[?]", #repo_name + 1)
 	c_np_data_path = ffi.new("char[?]", #np_data_path + 1)
 
+	ffi.copy(c_server_url, server_url)
 	ffi.copy(c_repo_name, repo_name)
 	ffi.copy(c_np_data_path, np_data_path)
 
-	local app = libnitpick.np_new(c_repo_name, c_np_data_path)
+	local app = libnitpick.np_new(c_server_url, c_repo_name, c_np_data_path)
 	ffi.gc(app, libnitpick.np_free)
 
 	---@type Nitpick
