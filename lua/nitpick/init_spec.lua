@@ -2,20 +2,20 @@ local diffview = require("diffview")
 local stub = require("luassert.stub")
 
 local nitpick = require("nitpick")
-local np = require("nitpick.np")
+local lib = require("nitpick.lib")
 local onboarder = require("nitpick.onboarder")
 
 local test = it
 
 describe("nitpick", function()
 	before_each(function()
-		nitpick.np = np
+		nitpick.lib = lib
 	end)
 
 	test("start onboarding if no previous review was found", function()
 		local onboarder_start = stub(onboarder, "start")
 
-		local start_review = stub(np, "start_review")
+		local start_review = stub(lib, "start_review")
 		start_review.returns("")
 
 		nitpick.start_review()
@@ -26,7 +26,7 @@ describe("nitpick", function()
 	test("start a review", function()
 		local diffview_open = stub(diffview, "open")
 
-		local start_review = stub(np, "start_review")
+		local start_review = stub(lib, "start_review")
 		start_review.returns("abc123")
 
 		nitpick.start_review()
@@ -36,7 +36,7 @@ describe("nitpick", function()
 
 	test("start a review from arbitrary commit", function()
 		local diffview_open = stub(diffview, "open")
-		local start_review = stub(np, "start_review")
+		local start_review = stub(lib, "start_review")
 
 		nitpick.start_review("xyz123")
 
@@ -46,12 +46,73 @@ describe("nitpick", function()
 
 	test("end a review", function()
 		local diffview_close = stub(diffview, "close")
-		local end_review = stub(np, "end_review")
+		local end_review = stub(lib, "end_review")
 		end_review.returns("xyz123")
 
 		nitpick.end_review()
 
 		assert.stub(end_review).called(1)
 		assert.stub(diffview_close).called(1)
+	end)
+
+	describe("sign up", function()
+		test("new account", function()
+			-- FIXME: rather than use the vim notify, it might make more sense to
+			-- build a notify object. it could vary in how it notifies (down in the
+			-- command line like vim.notify, or as a popup)
+			local log = stub(vim, "notify")
+
+			local signup = stub(lib, "signup")
+			signup.returns("server_generated_access_token")
+
+			nitpick.signup("newuser")
+			assert.stub(log).was.called_with([[Welcome newuser! Here's your access token: "server_generated_access_token".
+This has been added to your config file, but you need to keep it in a safe place forever. It's your only log in mechanism.
+Don't lose it, and don't share it.]], vim.log.levels.INFO)
+		end)
+
+		test("fail to sign up", function()
+			-- FIXME: rather than use the vim notify, it might make more sense to
+			-- build a notify object. it could vary in how it notifies (down in the
+			-- command line like vim.notify, or as a popup)
+			local log = stub(vim, "notify")
+
+			local signup = stub(lib, "signup")
+			signup.returns(nil)
+
+			nitpick.signup("newuser")
+			assert.stub(log).was.called_with(
+				"Sign up failed. Please try again later.",
+				vim.log.levels.INFO
+			)
+		end)
+	end)
+
+	test("deactivate", function()
+		-- FIXME: rather than use the vim notify, it might make more sense to
+		-- build a notify object. it could vary in how it notifies (down in the
+		-- command line like vim.notify, or as a popup)
+		local log = stub(vim, "notify")
+
+		local deactivate = stub(lib, "deactivate")
+		deactivate.returns(true)
+
+		-- FIXME: add confirmation
+		nitpick.deactivate()
+		assert.stub(log).was.called_with(
+			"Your account has been deactivated.",
+			vim.log.levels.INFO
+		)
+
+		log:clear()
+
+		deactivate.returns(false)
+
+		-- FIXME: add confirmation
+		nitpick.deactivate()
+		assert.stub(log).was.called_with(
+			"Deactivate failed. Please try again later.",
+			vim.log.levels.INFO
+		)
 	end)
 end)

@@ -6,6 +6,11 @@ local command = require("nitpick.command")
 local test = it
 
 describe("command", function()
+	test("map NitpickSignup to dispatch command", function()
+		assert.are_same({ "signup", "newuser" }, command.build_signup({ "newuser" }))
+		assert.are_same({ "signup", "newuser" }, command.build_signup({ "newuser", "ignore me" }))
+	end)
+
 	describe("completions", function()
 		test("return all completions when cmd is emtpy", function()
 			local cmp = command.complete("Nitpick ")
@@ -49,6 +54,13 @@ describe("command", function()
 
 		test("unknown command fails", function()
 			assert.is_false(command.dispatch({ "notarealcommand" }))
+		end)
+
+		test("signup", function()
+			local signup = stub(nitpick, "signup")
+
+			assert.is_true(command.dispatch({ "signup", "newuser" }))
+			assert.stub(signup).was.called_with("newuser")
 		end)
 	end)
 end)

@@ -14,6 +14,7 @@ local dispatch_map = {
 	--stub..
 	["start"] = "start_review",
 	["end"] = "end_review",
+	["signup"] = "signup",
 }
 
 ---@param args string[]
@@ -26,6 +27,13 @@ local function parse(args)
 	}
 end
 
+---Transorms the results of NitpickSignup user command to a dispatchable set of
+---args.
+---@param args string[] Args passed from the user.
+---@return string[] dispatch_args Mapped args to dispatch arts
+function command.build_signup(args)
+	return { "signup", args[1] }
+end
 
 ---@param cmd_line string Unparsed command line
 ---@return string[] commands Filtered list of possible commands
