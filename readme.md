@@ -13,7 +13,12 @@ monorepo and released to
 
 nitpick has a philosophy of embedding in the ecosystem. If there is a canonical
 tool that exists, nitpick will typically prefer to use that over rolling
-something new. Most likely, these are already installed.
+something new. In most cases, these are plugings that would already be
+installed.
+
+**Note:** For all of the below requirements, if multiple are listed under a
+section, only one needs to be installed; nitpick will automatically detect which
+one to use.
 
 ## Requirements
 
@@ -30,8 +35,6 @@ A diffing tool is required to display the diffs while conducting a review.
 When no previous review has been detected, nitpick will prompt the user for a
 starting point using a picker.
 
-Only one picker is required, there is no need to install both.
-
 #### Supported
 
 [Fzf-Lua](https://github.com/ibhagwan/fzf-lua)
@@ -43,11 +46,9 @@ Only one picker is required, there is no need to install both.
 
 `require('nitpick').setup()`
 
-
 # Usage
 
-All commands are available through a single entry point: `Nitpick`.
-
+Most commands are available through a single entry point: `Nitpick`.
 
 ## start [commit]
 
@@ -68,4 +69,4 @@ starting point, a picker will be presented on the next `Nitpick start`.
 ## end
 
 Ends a reivew. The state of the review is updated to the HEAD commit and will
-become the starting point for the nexe `Nitpick start`.
+become the starting point for the next `Nitpick start`.
