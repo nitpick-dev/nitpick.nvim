@@ -9,7 +9,7 @@ describe("command", function()
 	describe("completions", function()
 		test("return all completions when cmd is emtpy", function()
 			local cmp = command.complete("Nitpick ")
-			assert.are_same({ "start", "end" }, cmp)
+			assert.are_same({ "start", "end", "authorize" }, cmp)
 		end)
 
 		test("filter by leading characters", function()
@@ -20,6 +20,14 @@ describe("command", function()
 			assert.are_same({ "end" }, cmp)
 
 			cmp = command.complete("Nitpick friggin")
+			assert.are_same({}, cmp)
+		end)
+
+		test("filter sub command", function()
+			local cmp = command.complete("Nitpick authorize ")
+			assert.are_same({ "github" }, cmp)
+
+			cmp = command.complete("Nitpick authorize b")
 			assert.are_same({}, cmp)
 		end)
 	end)
@@ -45,6 +53,13 @@ describe("command", function()
 
 			assert.is_true(command.dispatch({ "end" }))
 			assert.is_true(end_cmd:called(1))
+		end)
+
+		test("authorize command", function()
+			local authorize = stub(nitpick, "authorize")
+
+			assert.is_true(command.dispatch({ "authorize", "github", "some_token" }))
+			assert.stub(authorize).was.called_with("github", "some_token")
 		end)
 
 		test("unknown command fails", function()

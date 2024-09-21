@@ -5,7 +5,7 @@ local command = {}
 ---@class Cmd
 ---@field name string
 ---@field fn string
----@field args string?
+---@field args string[]
 
 ---Maps a user command to the function name used in `nitpick`.
 local dispatch_map = {
@@ -14,6 +14,7 @@ local dispatch_map = {
 	--stub..
 	["start"] = "start_review",
 	["end"] = "end_review",
+	["authorize"] = "authorize",
 }
 
 ---@param args string[]
@@ -22,23 +23,27 @@ local function parse(args)
 	return {
 		name = args[1],
 		fn = dispatch_map[args[1]],
-		args = args[2],
+		args = { unpack(args, 2, #args + 1) },
 	}
 end
 
 ---@param cmd_line string Unparsed command line
 ---@return string[] commands Filtered list of possible commands
 function command.complete(cmd_line)
-	local available_commands = { "start", "end" }
+	local available_commands = { "start", "end", "authorize" }
+	local sub_commands = {
+		["authorize"] = { "github" },
+	}
 
 	local tokens = vim.split(cmd_line, "%s+")
-	local commands = vim.tbl_filter(
-		function(cmd)
-			return vim.startswith(cmd, tokens[2])
-		end,
-		available_commands)
+	local prefix = #tokens == 2 and tokens[2] or tokens[3]
+	local options = #tokens == 2 and available_commands or sub_commands[tokens[2]]
 
-	return commands
+	return vim.tbl_filter(
+		function(cmd)
+			return vim.startswith(cmd, prefix)
+		end,
+		options)
 end
 
 ---@param args string[] Args pass from the user
@@ -55,7 +60,7 @@ function command.dispatch(args)
 		return false
 	end
 
-	nitpick[cmd.fn](cmd.args)
+	nitpick[cmd.fn](unpack(cmd.args))
 
 	return true
 end

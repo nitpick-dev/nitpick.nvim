@@ -10,6 +10,8 @@ typedef void* np_app;
 np_app np_new(char* repo_name, char* base_path, char* server_url);
 void np_free(np_app app);
 
+bool np_authorize(np_app app, char* host, char* token);
+
 int np_start_review(np_app app, char* buf);
 int np_end_review(np_app app, char* buf);
 ]])
@@ -78,6 +80,19 @@ function lib:new(repo_name, np_data_path, server_url)
 	self.__index = self
 
 	return np
+end
+
+---@param host string
+---@param token string
+---@return boolean success
+function lib:authorize(host, token)
+	local c_host = ffi.new("char[?]", #host + 1)
+	ffi.copy(c_host, host)
+
+	local c_token = ffi.new("char[?]", #token + 1)
+	ffi.copy(c_token, token)
+
+	return libnitpick.np_authorize(self.app, c_host, c_token)
 end
 
 ---Starts a review. If a review was previously conducted, this will start from

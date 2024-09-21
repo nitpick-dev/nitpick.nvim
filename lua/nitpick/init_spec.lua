@@ -12,6 +12,28 @@ describe("nitpick", function()
 		nitpick.lib = lib
 	end)
 
+	test("authorize a host", function()
+		local log = stub(vim, "notify")
+
+		local authorize = stub(lib, "authorize")
+		authorize.returns(true)
+
+		nitpick.authorize("github", "some_token")
+		assert.stub(log).was.called_with(
+			"github was successfully authorized.",
+			vim.log.levels.INFO
+		)
+
+		log:clear()
+
+		authorize.returns(false)
+		nitpick.authorize("github", "some_token")
+		assert.stub(log).was.called_with(
+			"failed to authorize github.",
+			vim.log.levels.INFO
+		)
+	end)
+
 	test("start onboarding if no previous review was found", function()
 		local onboarder_start = stub(onboarder, "start")
 

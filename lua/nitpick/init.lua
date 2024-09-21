@@ -34,6 +34,21 @@ function nitpick.setup(user_opts)
 	nitpick.lib = lib:new(repo_name, np_data_path, opts.server_url)
 end
 
+---@param host string
+---@param token string
+function nitpick.authorize(host, token)
+	assert_nitpick()
+
+	local authorized = lib:authorize(host, token)
+
+	---@type string
+	local pattern = authorized
+			and "%s was successfully authorized."
+			or "failed to authorize %s."
+
+	vim.notify(string.format(pattern, host), vim.log.levels.INFO)
+end
+
 ---@param start_commit string?
 function nitpick.start_review(start_commit)
 	assert_nitpick()
