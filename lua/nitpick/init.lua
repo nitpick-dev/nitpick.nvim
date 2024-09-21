@@ -62,38 +62,4 @@ function nitpick.end_review()
 	diffview.close()
 end
 
-function nitpick.deactivate()
-	assert_nitpick()
-
-	-- HACK: add confirmation. For now, we can leave it out of the commands, so a
-	-- user will have to go through lua and require it to delete. If they're going
-	-- through those motions, we can just assume it was a very intentional kind of
-	-- thing. but it would be better to just add confirmation either way.
-	local deactivated = nitpick.lib:deactivate()
-	if not deactivated then
-		vim.notify("Deactivate failed. Please try again later.", vim.log.levels.INFO)
-		return
-	end
-
-	vim.notify("Your account has been deactivated.", vim.log.levels.INFO)
-end
-
----@param username string
-function nitpick.signup(username)
-	assert_nitpick()
-
-	local access_token = nitpick.lib:signup(username)
-	if access_token == nil then
-		-- FIXME: we could maybe give some reasoning. It'd be nice to return an
-		-- error code or sometihng from the library, then we can call back to get
-		-- the value. then our messagees will be consistent between editors.
-		vim.notify("Sign up failed. Please try again later.", vim.log.levels.INFO)
-		return
-	end
-
-	vim.notify(string.format([[Welcome %s! Here's your access token: "%s".
-This has been added to your config file, but you need to keep it in a safe place forever. It's your only log in mechanism.
-Don't lose it, and don't share it.]], username, access_token), vim.log.levels.INFO)
-end
-
 return nitpick

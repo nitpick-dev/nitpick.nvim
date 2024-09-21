@@ -10,9 +10,6 @@ typedef void* np_app;
 np_app np_new(char* repo_name, char* base_path, char* server_url);
 void np_free(np_app app);
 
-int np_signup(np_app app, char* username, char* buf);
-bool np_deactivate(np_app app);
-
 int np_start_review(np_app app, char* buf);
 int np_end_review(np_app app, char* buf);
 ]])
@@ -99,33 +96,6 @@ end
 function lib:end_review()
 	local buf = ffi.new("char[?]", 100)
 	local len = libnitpick.np_end_review(self.app, buf)
-
-	return ffi.string(buf, len)
-end
-
-
----Perminantly deactivate the current logged in user. This action is a hard
----delete of the accounnt and cannot be undone.
----@return boolean deactivated Indicator of operation success.
-function lib:deactivate()
-	return libnitpick.np_deactivate(self.app)
-end
-
----Creates a new user with the provided username and returns an access token if
----successful. The access token is stored by the library for future use, but
----should still be provided to the user.
----@param username string Username for the new user
----@return string? access_token Access token for the newly created user. nil if the operation failed.
-function lib:signup(username)
-	local buf = ffi.new("char[?]", 100)
-
-	local c_username = ffi.new("char[?]", #username + 1)
-	ffi.copy(c_username, username)
-
-	local len = libnitpick.np_signup(self.app, c_username, buf)
-	if len == 0 then
-		return nil
-	end
 
 	return ffi.string(buf, len)
 end

@@ -8,9 +8,3 @@ vim.api.nvim_create_user_command(
 		complete = function(_, line) return command.complete(line) end,
 	}
 )
-
-vim.api.nvim_create_user_command(
-	"NitpickSignup",
-	function(data) command.dispatch(command.build_signup(data.fargs)) end,
-	{ nargs = 1 }
-)
