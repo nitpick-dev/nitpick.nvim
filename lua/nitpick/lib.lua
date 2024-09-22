@@ -92,6 +92,8 @@ function lib:authorize(host, token)
 	local c_token = ffi.new("char[?]", #token + 1)
 	ffi.copy(c_token, token)
 
+	-- FIXME: return an error code so we can display a message why the operation
+	-- failed
 	return libnitpick.np_authorize(self.app, c_host, c_token)
 end
 

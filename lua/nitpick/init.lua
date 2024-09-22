@@ -39,7 +39,7 @@ end
 function nitpick.authorize(host, token)
 	assert_nitpick()
 
-	local authorized = lib:authorize(host, token)
+	local authorized = nitpick.lib:authorize(host, token)
 
 	---@type string
 	local pattern = authorized
