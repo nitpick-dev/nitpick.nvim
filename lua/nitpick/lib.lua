@@ -3,6 +3,12 @@ local ffi = require("ffi")
 ---@type ffi.namespace*
 local libnitpick
 
+
+---@class Event
+---@field kind string
+---@field actor string
+---@field description string
+
 ffi.cdef([[
 typedef void* np_app;
 
@@ -95,6 +101,14 @@ function lib:authorize(host, token)
 	-- FIXME: return an error code so we can display a message why the operation
 	-- failed
 	return libnitpick.np_authorize(self.app, c_host, c_token)
+end
+
+---@return Event[]
+function lib:activity()
+	return {
+		{ kind = "COMMENT_ADD", actor = "user-1", description = "this is a comment" },
+		{ kind = "COMMENT_ADD", actor = "user-2", description = "this is another comment" },
+	}
 end
 
 ---Starts a review. If a review was previously conducted, this will start from

@@ -14,6 +14,7 @@ local dispatch_map = {
 	--stub..
 	["start"] = "start_review",
 	["end"] = "end_review",
+	["activity"] = "load_activity",
 	["authorize"] = "authorize",
 }
 
@@ -30,7 +31,7 @@ end
 ---@param cmd_line string Unparsed command line
 ---@return string[] commands Filtered list of possible commands
 function command.complete(cmd_line)
-	local available_commands = { "start", "end", "authorize" }
+	local available_commands = { "start", "end", "activity", "authorize" }
 	local sub_commands = {
 		["authorize"] = { "github" },
 	}

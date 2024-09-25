@@ -1,5 +1,6 @@
 local diffview = require("diffview")
 
+local activity = require("nitpick.activity")
 local lib = require("nitpick.lib")
 local onboarder = require("nitpick.onboarder")
 
@@ -47,6 +48,23 @@ function nitpick.authorize(host, token)
 			or "failed to authorize %s."
 
 	vim.notify(string.format(pattern, host), vim.log.levels.INFO)
+end
+
+function nitpick.load_activity()
+	assert_nitpick()
+
+	vim.cmd("tabnew")
+
+	local buf = vim.api.nvim_create_buf(true, true)
+	vim.api.nvim_set_current_buf(buf)
+
+	local events = lib:activity()
+
+	vim.api.nvim_buf_set_lines(buf, 0, -1, false, activity.parse(events))
+
+	vim.api.nvim_buf_set_name(buf, "Nitpick Activity")
+	vim.api.nvim_win_set_cursor(0, { 1, 0 })
+	vim.api.nvim_buf_set_option(buf, "readonly", true)
 end
 
 ---@param start_commit string?
