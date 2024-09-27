@@ -53,12 +53,12 @@ end
 function nitpick.load_activity()
 	assert_nitpick()
 
+	local events = nitpick.lib:activity()
+
 	vim.cmd("tabnew")
 
 	local buf = vim.api.nvim_create_buf(true, true)
 	vim.api.nvim_set_current_buf(buf)
-
-	local events = lib:activity()
 
 	vim.api.nvim_buf_set_lines(buf, 0, -1, false, activity.parse(events))
 

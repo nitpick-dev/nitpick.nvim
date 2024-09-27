@@ -12,11 +12,21 @@ local libnitpick
 ffi.cdef([[
 typedef void* np_app;
 
+typedef enum { comment_add } event_kind;
+
+typedef struct np_event {
+	event_kind kind;
+	char* actor;
+	char* description;
+} np_event;
+
 // NOTE: server_url is optional
 np_app np_new(char* repo_name, char* base_path, char* server_url);
 void np_free(np_app app);
 
 bool np_authorize(np_app app, char* host, char* token);
+
+int np_activity(np_app app, np_event* buf);
 
 int np_start_review(np_app app, char* buf);
 int np_end_review(np_app app, char* buf);
@@ -105,10 +115,23 @@ end
 
 ---@return Event[]
 function lib:activity()
-	return {
-		{ kind = "COMMENT_ADD", actor = "user-1", description = "this is a comment" },
-		{ kind = "COMMENT_ADD", actor = "user-2", description = "this is another comment" },
-	}
+	local buf = ffi.new("np_event[?]", 100)
+	local len = libnitpick.np_activity(self.app, buf)
+
+	---@type Event[]
+	local events = {}
+	for index = 0, len - 1 do
+		---@type Event
+		local event = {
+			kind = buf[index].kind,
+			actor = ffi.string(buf[index].actor),
+			description = ffi.string(buf[index].description),
+		}
+
+		table.insert(events, event)
+	end
+
+	return events
 end
 
 ---Starts a review. If a review was previously conducted, this will start from
