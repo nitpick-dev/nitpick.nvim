@@ -1,6 +1,5 @@
 local diffview = require("diffview")
 
-local activity = require("nitpick.activity")
 local lib = require("nitpick.lib")
 local onboarder = require("nitpick.onboarder")
 
@@ -60,7 +59,8 @@ function nitpick.load_activity()
 	local buf = vim.api.nvim_create_buf(true, true)
 	vim.api.nvim_set_current_buf(buf)
 
-	vim.api.nvim_buf_set_lines(buf, 0, -1, false, activity.parse(events))
+	local lines = vim.split(events, "\n")
+	vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
 
 	vim.api.nvim_buf_set_name(buf, "Nitpick Activity")
 	vim.api.nvim_win_set_cursor(0, { 1, 0 })

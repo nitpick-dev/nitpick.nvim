@@ -4,21 +4,10 @@ local ffi = require("ffi")
 local libnitpick
 
 
----@class Event
----@field kind string
----@field actor string
----@field description string
-
 ffi.cdef([[
 typedef void* np_app;
 
 typedef enum { comment_add } event_kind;
-
-typedef struct np_event {
-	event_kind kind;
-	char* actor;
-	char* description;
-} np_event;
 
 // NOTE: server_url is optional
 np_app np_new(char* repo_name, char* base_path, char* server_url);
@@ -26,7 +15,7 @@ void np_free(np_app app);
 
 bool np_authorize(np_app app, char* host, char* token);
 
-int np_activity(np_app app, np_event* buf);
+int np_activity(np_app app, char* buf);
 
 int np_start_review(np_app app, char* buf);
 int np_end_review(np_app app, char* buf);
@@ -84,7 +73,7 @@ function lib:new(repo_name, np_data_path, server_url)
 		ffi.copy(c_server_url, server_url)
 	end
 
-	local app = libnitpick.np_new(c_repo_name, c_np_data_path, server_url)
+	local app = libnitpick.np_new(c_repo_name, c_np_data_path, c_server_url)
 	ffi.gc(app, libnitpick.np_free)
 
 	---@type Nitpick
@@ -113,25 +102,13 @@ function lib:authorize(host, token)
 	return libnitpick.np_authorize(self.app, c_host, c_token)
 end
 
----@return Event[]
+---@return string
 function lib:activity()
-	local buf = ffi.new("np_event[?]", 100)
+	local buf = ffi.new("char[?]", 1024)
+
+	-- FIXME: at some point, it'll probably be good for this to be async
 	local len = libnitpick.np_activity(self.app, buf)
-
-	---@type Event[]
-	local events = {}
-	for index = 0, len - 1 do
-		---@type Event
-		local event = {
-			kind = buf[index].kind,
-			actor = ffi.string(buf[index].actor),
-			description = ffi.string(buf[index].description),
-		}
-
-		table.insert(events, event)
-	end
-
-	return events
+	return ffi.string(buf, len)
 end
 
 ---Starts a review. If a review was previously conducted, this will start from
