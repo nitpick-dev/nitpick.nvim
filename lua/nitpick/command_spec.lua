@@ -5,11 +5,25 @@ local command = require("nitpick.command")
 
 local test = it
 
+describe("parse", function()
+	test("parse all args", function()
+		local cmd = command.parse({ "command", "first", "second" })
+		assert.are_same({
+			name = "command",
+			-- NOTE: command doesn't map to anything so it's nil. this should never be
+			-- the case though. we could add a real command, but then the args
+			-- wouldn't make sense.
+			fn = nil,
+			args = { "first", "second" },
+		}, cmd)
+	end)
+end)
+
 describe("command", function()
 	describe("completions", function()
 		test("return all completions when cmd is emtpy", function()
 			local cmp = command.complete("Nitpick ")
-			assert.are_same({ "start", "end", "activity", "authorize" }, cmp)
+			assert.are_same({ "comment", "start", "end", "activity", "authorize" }, cmp)
 		end)
 
 		test("filter by leading characters", function()
@@ -67,6 +81,13 @@ describe("command", function()
 
 			assert.is_true(command.dispatch({ "activity" }))
 			assert.stub(activity).was.called(1)
+		end)
+
+		test("add a comment", function()
+			local comment = stub(nitpick, "add_comment")
+
+			assert.is_true(command.dispatch({ "comment" }))
+			assert.stub(comment).was.called(1)
 		end)
 
 		test("unknown command fails", function()

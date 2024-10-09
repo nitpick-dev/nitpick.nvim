@@ -1,0 +1,4 @@
+---@class Comment
+---@field file string
+---@field line number
+---@field text string

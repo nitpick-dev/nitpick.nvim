@@ -49,6 +49,36 @@ function nitpick.authorize(host, token)
 	vim.notify(string.format(pattern, host), vim.log.levels.INFO)
 end
 
+-- FIXME: this is not testable. we need to fix that.
+-- FIXME: passing the comment is temporary. we should open a split buffer to
+-- leave the comment
+---@param ...string
+function nitpick.add_comment(...)
+	assert_nitpick()
+
+	-- FIXME: this will only stop trying to add a comment at the root of the
+	-- project. we should have a smater way to detect this. maybe that can be
+	-- offloaded to the lib
+	---@type string
+	local file = vim.fn.expand("%:p")
+	if file == "" then
+		-- FIXME: need a test case
+		-- FIXME: we should throw a similar error on a version control ignored file
+		vim.notify("Comments are only allowed in project files.", vim.log.levels.INFO)
+		return
+	end
+
+	local success = nitpick.lib:add_comment({
+		file = file,
+		text = table.concat({ ... }, " "),
+		line = vim.api.nvim_win_get_cursor(0)[1],
+	})
+
+	if not success then
+		vim.notify("Unable to add comment.", vim.log.levels.ERROR)
+	end
+end
+
 function nitpick.load_activity()
 	assert_nitpick()
 
