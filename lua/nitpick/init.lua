@@ -60,7 +60,7 @@ function nitpick.add_comment(...)
 	-- project. we should have a smater way to detect this. maybe that can be
 	-- offloaded to the lib
 	---@type string
-	local file = vim.fn.expand("%:p")
+	local file = vim.fn.expand("%")
 	if file == "" then
 		-- FIXME: need a test case
 		-- FIXME: we should throw a similar error on a version control ignored file
