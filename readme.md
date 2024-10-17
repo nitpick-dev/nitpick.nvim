@@ -11,15 +11,6 @@ monorepo and released to
 
 # Getting Started
 
-nitpick has a philosophy of embedding in the ecosystem. If there is a canonical
-tool that exists, nitpick will typically prefer to use that over rolling
-something new. In most cases, these are plugings that would already be
-installed.
-
-**Note:** For all of the below requirements, if multiple are listed under a
-section, only one needs to be installed; nitpick will automatically detect which
-one to use.
-
 ## Installation
 
 ### Lazy
@@ -27,7 +18,7 @@ one to use.
 ```lua
 return {
     "nitpick-dev/nitpick.nvim",
-    build = "install.lua",
+    build = "lua/install.lua",
 }
 ```
 
@@ -45,6 +36,16 @@ return {
 
 
 ## Requirements
+
+nitpick has a philosophy of embedding in the ecosystem. If there is a canonical
+tool that exists, nitpick will typically prefer to use that over rolling
+something new. In most cases, these are plugings that would already be
+installed.
+
+
+**Note:** For all of the below requirements, if multiple are listed under a
+section, only one needs to be installed; nitpick will automatically detect which
+one to use.
 
 ### Diffing tool
 
