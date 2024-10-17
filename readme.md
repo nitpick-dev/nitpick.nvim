@@ -20,6 +20,30 @@ installed.
 section, only one needs to be installed; nitpick will automatically detect which
 one to use.
 
+## Installation
+
+### Lazy
+
+```lua
+return {
+    "nitpick-dev/nitpick.nvim",
+    build = "install.lua",
+}
+```
+
+### packer / pckr
+
+```lua
+{ "nitpick-dev/nitpick.nvim", run = "nvim -l lua/install.lua" }
+```
+
+### paq
+
+```lua
+{ "nitpick-dev/nitpick.nvim", build = "nvim -l lua/install.lua" }
+```
+
+
 ## Requirements
 
 ### Diffing tool
