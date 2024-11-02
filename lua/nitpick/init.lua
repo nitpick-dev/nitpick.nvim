@@ -79,20 +79,26 @@ function nitpick.add_comment(...)
 	end
 end
 
+local activity_title = "Nitpick Activity"
 function nitpick.load_activity()
 	assert_nitpick()
 
 	local events = nitpick.lib:activity()
 
+	-- FIXME: there will always be another tab that gets open. we'll have to
+	-- add some logic to find the open tab and create a new one if it doesn't
+	-- exist.
 	vim.cmd("tabnew")
+	local existing_buf = vim.fn.bufnr(activity_title)
 
-	local buf = vim.api.nvim_create_buf(true, true)
+	local buf = existing_buf ~= -1 and existing_buf or vim.api.nvim_create_buf(true, true)
+	vim.api.nvim_buf_set_option(buf, "readonly", false)
 	vim.api.nvim_set_current_buf(buf)
 
 	local lines = vim.split(events, "\n")
 	vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
 
-	vim.api.nvim_buf_set_name(buf, "Nitpick Activity")
+	vim.api.nvim_buf_set_name(buf, activity_title)
 	vim.api.nvim_win_set_cursor(0, { 1, 0 })
 	vim.api.nvim_buf_set_option(buf, "readonly", true)
 end
