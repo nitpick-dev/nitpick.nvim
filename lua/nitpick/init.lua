@@ -3,6 +3,8 @@ local diffview = require("diffview")
 local lib = require("nitpick.lib")
 local onboarder = require("nitpick.onboarder")
 
+local np_group = vim.api.nvim_create_augroup("NitpickGroup", { clear = true })
+
 ---@class NitpickOptions
 ---@field lib_path? string Overrides the default path for libnitpick
 ---@field server_url? string Overrides the default nitpick server url
@@ -68,18 +70,53 @@ function nitpick.add_comment(...)
 		return
 	end
 
-	local success = nitpick.lib:add_comment({
-		file = file,
-		text = table.concat({ ... }, " "),
-		line = vim.api.nvim_win_get_cursor(0)[1],
-	})
+	local line = vim.api.nvim_win_get_cursor(0)[1]
 
-	if not success then
-		vim.notify("Unable to add comment.", vim.log.levels.ERROR)
+	-- HACK: use the same logic between an inline comment and a buffer comment.
+	-- there has to be something way cooler than this
+	local function commit_comment(text)
+		local success = nitpick.lib:add_comment({
+			file = file,
+			text = text,
+			line = line,
+		})
+
+		if not success then
+			vim.notify("Unable to add comment.", vim.log.levels.ERROR)
+		end
 	end
+
+	local args = { ... }
+	if #args ~= 0 then
+		commit_comment(table.concat(args, " "))
+		return
+	end
+
+	-- FIXME: we should do split vs vsplit based on the size of the window. or
+	-- maybe off a user setting
+	vim.cmd("vnew")
+	local buf = vim.api.nvim_get_current_buf()
+
+	vim.api.nvim_buf_set_option(buf, "buftype", "acwrite")
+	vim.api.nvim_buf_set_option(buf, "bufhidden", "wipe")
+	vim.api.nvim_buf_set_name(buf, "nitpick comment")
+
+	vim.api.nvim_create_autocmd("BufWriteCmd", {
+		group = np_group,
+		buffer = buf,
+		callback = function()
+			local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
+			local content = table.concat(lines, "\n")
+
+			commit_comment(content)
+
+			vim.api.nvim_buf_set_option(buf, "modified", false)
+			return true
+		end,
+	})
 end
 
-local activity_title = "Nitpick Activity"
+local activity_title = "nitpick activity"
 function nitpick.load_activity()
 	assert_nitpick()
 
