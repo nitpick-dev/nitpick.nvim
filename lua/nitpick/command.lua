@@ -7,6 +7,11 @@ local command = {}
 ---@field fn string
 ---@field args string[]
 
+---@class DispatchPayload
+---@field args string[]
+---@field line_start integer The start line provided by vim based on the range.
+---@field line_end integer The end line provided by vim based on the range.
+
 ---Maps a user command to the function name used in `nitpick`.
 local dispatch_map = {
 	--FIXME: it'd be cooler to be able to use the nitpick function directly here,
@@ -50,8 +55,10 @@ function command.complete(cmd_line)
 end
 
 ---@param args string[] Args pass from the user
+---@param line_start integer? The starting line when put in a visual range
+---@param line_end integer? The ending line when put in a visual range
 ---@return boolean status Status for dispatching. `true` if successful, `false` otherwise
-function command.dispatch(args)
+function command.dispatch(args, line_start, line_end)
 	local cmd = command.parse(args)
 
 	if cmd.fn == nil then
@@ -63,7 +70,17 @@ function command.dispatch(args)
 		return false
 	end
 
-	nitpick[cmd.fn](unpack(cmd.args))
+	-- HACK: we should have a consistent dispatch payload. for now, this is the
+	-- easiest way to let comment be different.
+	if cmd.name == "comment" then
+		nitpick[cmd.fn]({
+			args = cmd.args,
+			line_start = line_start,
+			line_end = line_end,
+		})
+	else
+		nitpick[cmd.fn](unpack(cmd.args))
+	end
 
 	return true
 end

@@ -54,8 +54,8 @@ end
 -- FIXME: this is not testable. we need to fix that.
 -- FIXME: passing the comment is temporary. we should open a split buffer to
 -- leave the comment
----@param ...string
-function nitpick.add_comment(...)
+---@param payload DispatchPayload
+function nitpick.add_comment(payload)
 	assert_nitpick()
 
 	-- FIXME: this will only stop trying to add a comment at the root of the
@@ -70,15 +70,19 @@ function nitpick.add_comment(...)
 		return
 	end
 
-	local line = vim.api.nvim_win_get_cursor(0)[1]
+	-- FIXME: should we just make end line be the same as start if it's one line?
+	if payload.line_start == payload.line_end then
+		payload.line_end = 0
+	end
 
 	-- HACK: use the same logic between an inline comment and a buffer comment.
 	-- there has to be something way cooler than this
 	local function commit_comment(text)
 		local success = nitpick.lib:add_comment({
+			line_start = payload.line_start,
+			line_end = payload.line_end,
 			file = file,
 			text = text,
-			line = line,
 		})
 
 		if not success then
@@ -86,9 +90,8 @@ function nitpick.add_comment(...)
 		end
 	end
 
-	local args = { ... }
-	if #args ~= 0 then
-		commit_comment(table.concat(args, " "))
+	if #payload.args ~= 0 then
+		commit_comment(table.concat(payload.args, " "))
 		return
 	end
 

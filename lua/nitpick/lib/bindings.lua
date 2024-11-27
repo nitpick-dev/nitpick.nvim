@@ -1,4 +1,5 @@
 ---@class Comment
 ---@field file string
----@field line number
+---@field line_start number
+---@field line_end number
 ---@field text string

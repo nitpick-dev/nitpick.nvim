@@ -8,7 +8,8 @@ ffi.cdef([[
 typedef void* np_app;
 
 typedef struct {
-	int line;
+	const uint16_t line_start;
+	const uint16_t line_end;
 	const char* file;
 	const char* text;
 } np_comment;
@@ -119,7 +120,7 @@ end
 
 ---@return string
 function lib:activity()
-	local buf = ffi.new("char[?]", 1024)
+	local buf = ffi.new("char[?]", 5120)
 
 	-- FIXME: at some point, it'll probably be good for this to be async
 	local len = libnitpick.np_activity(self.app, buf)
