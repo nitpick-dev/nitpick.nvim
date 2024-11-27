@@ -143,6 +143,19 @@ function nitpick.load_activity()
 	vim.api.nvim_buf_set_option(buf, "readonly", true)
 end
 
+function nitpick.open_notes()
+	local editor_data_path = vim.fn.stdpath("data")
+	local repo_name = vim.fs.basename(vim.fn.getcwd())
+	local note_path = string.format(
+		"%s/nitpick/%s_notes.md",
+		editor_data_path,
+		repo_name
+	)
+
+	vim.cmd.vsplit()
+	vim.cmd.e(note_path)
+end
+
 ---@param start_commit string?
 function nitpick.start_review(start_commit)
 	assert_nitpick()

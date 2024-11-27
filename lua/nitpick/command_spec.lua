@@ -23,7 +23,7 @@ describe("command", function()
 	describe("completions", function()
 		test("return all completions when cmd is emtpy", function()
 			local cmp = command.complete("Nitpick ")
-			assert.are_same({ "comment", "start", "end", "activity", "authorize" }, cmp)
+			assert.are_same({ "comment", "start", "end", "activity", "notes", "authorize" }, cmp)
 		end)
 
 		test("filter by leading characters", function()
@@ -88,6 +88,13 @@ describe("command", function()
 
 			assert.is_true(command.dispatch({ "comment" }))
 			assert.stub(comment).was.called(1)
+		end)
+
+		test("notes command", function()
+			local notes = stub(nitpick, "open_notes")
+
+			assert.is_true(command.dispatch({ "notes" }))
+			assert.stub(notes).was.called(1)
 		end)
 
 		test("unknown command fails", function()
