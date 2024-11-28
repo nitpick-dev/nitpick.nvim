@@ -4,6 +4,7 @@ local lib = require("nitpick.lib")
 local onboarder = require("nitpick.onboarder")
 
 local np_group = vim.api.nvim_create_augroup("NitpickGroup", { clear = true })
+local np_namespace = vim.api.nvim_create_namespace("Nitpick")
 
 ---@class NitpickOptions
 ---@field lib_path? string Overrides the default path for libnitpick
@@ -141,6 +142,85 @@ function nitpick.load_activity()
 	vim.api.nvim_buf_set_name(buf, activity_title)
 	vim.api.nvim_win_set_cursor(0, { 1, 0 })
 	vim.api.nvim_buf_set_option(buf, "readonly", true)
+
+	-- FIXME: let's refactor the way we get the activity log so that we don't need
+	-- to do as much processing. if we can just have an array of events, we could
+	-- build call print on the event and get the block to write out here and
+	-- we'll have all the information so we don't have to parse it.
+	-- another option would be to call to zig to calculate the positions and
+	-- return those. then it's just a mapping funciton here.
+
+	---@class BlockTarget
+	---@field file string Path to the target file.
+	---@field line_start number Line where the comment begins.
+	---@field line_end number? Line where the comment ends. Not always present.
+
+	---@class Block
+	---@field line_start number The starting position of the block
+	---@field line_end number The ending position of the block
+	---@field target BlockTarget
+
+	---@type Block[]
+	local blocks = {}
+
+	---@type number[]
+	local headers = {}
+	for i, line in ipairs(lines) do
+		if line:match("^.+%s+added a comment:$") then
+			table.insert(headers, i)
+		end
+	end
+
+	for i, start_pos in ipairs(headers) do
+		-- The header will always be followed by the position description of what the
+		-- file is and the line numbers.
+		local descriptor = lines[start_pos + 1]
+		local pattern = "%[([^%]]+)%s+%((%d+)%s*%-?%s*(%d*)%)%]"
+		local file, line_start, line_end = descriptor:match(pattern)
+
+		local end_pos = headers[i + 1] or #lines
+		table.insert(blocks, {
+			line_start = start_pos,
+			line_end = end_pos - 1,
+			target = {
+				file = file,
+				line_start = tonumber(line_start),
+				line_end = tonumber(line_end),
+			},
+		})
+	end
+
+	vim.api.nvim_buf_clear_namespace(buf, np_namespace, 0, -1)
+	for _, block in ipairs(blocks) do
+		vim.api.nvim_buf_set_extmark(buf, np_namespace, block.line_start, 0, {
+			end_line = block.line_end,
+			virt_text = { { "◆", "Comment" } },
+			virt_text_pos = "right_align",
+		})
+	end
+
+	vim.keymap.set("n", "gd",
+		function()
+			local current_line = vim.api.nvim_win_get_cursor(0)[1]
+
+			for _, block in ipairs(blocks) do
+				if current_line >= block.line_start and current_line <= block.line_end then
+					local file_buf = vim.fn.bufadd(block.target.file)
+
+					local existing_file_buf = vim.fn.bufwinid(file_buf)
+					if existing_file_buf ~= -1 then
+						vim.api.nvim_set_current_win(existing_file_buf)
+					else
+						vim.api.nvim_set_current_buf(file_buf)
+					end
+
+					vim.api.nvim_win_set_cursor(0, { block.target.line_start, 0 })
+					return
+				end
+			end
+		end,
+		{ buffer = buf, desc = "Go to the comment in the file." }
+	)
 end
 
 function nitpick.open_notes()
