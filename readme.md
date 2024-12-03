@@ -18,20 +18,20 @@ monorepo and released to
 ```lua
 return {
     "nitpick-dev/nitpick.nvim",
-    build = "lua/install.lua",
+    build = "sh install.sh",
 }
 ```
 
 ### packer / pckr
 
 ```lua
-{ "nitpick-dev/nitpick.nvim", run = "nvim -l lua/install.lua" }
+{ "nitpick-dev/nitpick.nvim", run = "sh install.sh" }
 ```
 
 ### paq
 
 ```lua
-{ "nitpick-dev/nitpick.nvim", build = "nvim -l lua/install.lua" }
+{ "nitpick-dev/nitpick.nvim", build = "sh install.sh" }
 ```
 
 
