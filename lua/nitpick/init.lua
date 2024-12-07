@@ -1,4 +1,8 @@
-local diffview = require("diffview")
+local has_diffview, diffview = pcall(require, "diffview")
+if not has_diffview then
+	vim.notify("Missing nitpick dependency: diffview", vim.log.levels.ERROR)
+	return
+end
 
 local lib = require("nitpick.lib")
 local onboarder = require("nitpick.onboarder")
