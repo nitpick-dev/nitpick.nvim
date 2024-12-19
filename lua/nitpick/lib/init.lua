@@ -75,6 +75,8 @@ function lib:new(repo_name, np_data_path, server_url)
 	ffi.copy(c_repo_name, repo_name)
 	ffi.copy(c_np_data_path, np_data_path)
 
+	print("data path", np_data_path)
+
 	if server_url ~= nil then
 		c_server_url = ffi.new("char[?]", #server_url + 1)
 		ffi.copy(c_server_url, server_url)
