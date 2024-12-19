@@ -5,6 +5,8 @@ local title = "nitpick onboard"
 
 ---@param onboard_cb fun(commit: string) Callback with selected commit as the first parameter
 local function start_fzf(onboard_cb)
+	vim.notify("starting fzf_lua onboarder\n", vim.log.levels.TRACE)
+
 	fzf.git_commits({
 		header = "Select a commit to begin the review",
 		winopts = {
@@ -13,10 +15,15 @@ local function start_fzf(onboard_cb)
 		actions = {
 			["default"] = function(selections)
 				assert(selections[1] ~= nil, "[onboarder:fzf]: invalid selection")
-				onboard_cb(selections[1]:match("^(%S+)"))
+
+				local commit = selections[1]:match("^(%S+)")
+				vim.notify(string.format("calling callback for commit %s\n", commit), vim.log.levels.TRACE)
+				onboard_cb(commit)
 			end,
 		},
 	})
+
+	vim.notify("returning from fzf_lua onboarder\n", vim.log.levels.TRACE)
 end
 
 ---@param onboard_cb fun(commit: string) Callback with selected commit as the first parameter
