@@ -16,8 +16,8 @@ typedef struct {
 
 typedef enum { comment_add } event_kind;
 
-// NOTE: server_url is optional
-np_app np_new(char* repo_name, char* base_path, char* server_url);
+// NOTE: data_path and server_url are optional
+np_app np_new(char* repo_name, char* data_path, char* server_url);
 void np_free(np_app app);
 
 bool np_authorize(np_app app, char* host, char* token);
@@ -29,23 +29,23 @@ int np_start_review(np_app app, char* buf);
 int np_end_review(np_app app, char* buf);
 ]])
 
----@class Nitpick
----@field app ffi.cdata*?
+--- @class Nitpick
+--- @field app ffi.cdata*?
 local lib = {
 	app = nil,
 }
 
----Load libnitpick
----@param lib_path string? User provided override path to libnitpick
----@return boolean success
-function lib.load(lib_path)
+--- Load libnitpick
+--- @param lib_path_override string? User provided override path to libnitpick.
+--- @return boolean success
+function lib.load(lib_path_override)
 	--FIXME: windows support
 	local ext = vim.loop.os_uname().sysname:lower() == "linux" and "so" or "dylib"
 
 	local default_lib_path = string.format("~/.local/bin/libnitpick.%s", ext)
-	local path = vim.fn.expand(lib_path or default_lib_path)
+	local lib_path = vim.fn.expand(lib_path_override or default_lib_path)
 
-	local ok, library = pcall(ffi.load, path)
+	local ok, library = pcall(ffi.load, lib_path)
 	if not ok then
 		return false
 	end
@@ -54,33 +54,32 @@ function lib.load(lib_path)
 	return true
 end
 
---HACK: adding these to the global scope to prevent them failing in c land...
---we should probably add a copy over there or something so they can be safely
---cleaned in lua
----@type ffi.cdata*?
-local c_server_url = nil
----@type ffi.cdata*
-local c_repo_name
----@type ffi.cdata*
-local c_np_data_path
+--- @param repo_name string
+--- @param data_path_override? string User provided path to override data storage.
+--- @param server_url_override? string User provided server url.
+--- @return Nitpick
+function lib:new(repo_name, data_path_override, server_url_override)
+	--- @type ffi.cdata*
+	local c_server_url = nil
 
----@param repo_name string
----@param np_data_path string
----@param server_url? string
----@return Nitpick
-function lib:new(repo_name, np_data_path, server_url)
-	c_repo_name = ffi.new("char[?]", #repo_name + 1)
-	c_np_data_path = ffi.new("char[?]", #np_data_path + 1)
+	--- @type ffi.cdata*
+	local c_data_path = nil
+
+	local c_repo_name = ffi.new("char[?]", #repo_name + 1)
 
 	ffi.copy(c_repo_name, repo_name)
-	ffi.copy(c_np_data_path, np_data_path)
 
-	if server_url ~= nil then
-		c_server_url = ffi.new("char[?]", #server_url + 1)
-		ffi.copy(c_server_url, server_url)
+	if data_path_override ~= nil then
+		c_data_path = ffi.new("char[?]", #data_path_override + 1)
+		ffi.copy(c_data_path, data_path_override)
 	end
 
-	local app = libnitpick.np_new(c_repo_name, c_np_data_path, c_server_url)
+	if server_url_override ~= nil then
+		c_server_url = ffi.new("char[?]", #server_url_override + 1)
+		ffi.copy(c_server_url, server_url_override)
+	end
+
+	local app = libnitpick.np_new(c_repo_name, c_data_path, c_server_url)
 	ffi.gc(app, libnitpick.np_free)
 
 	---@type Nitpick

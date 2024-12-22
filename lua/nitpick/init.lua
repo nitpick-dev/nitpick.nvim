@@ -10,9 +10,10 @@ local onboarder = require("nitpick.onboarder")
 local np_group = vim.api.nvim_create_augroup("NitpickGroup", { clear = true })
 local np_namespace = vim.api.nvim_create_namespace("Nitpick")
 
----@class NitpickOptions
----@field lib_path? string Overrides the default path for libnitpick
----@field server_url? string Overrides the default nitpick server url
+--- @class NitpickOptions
+--- @field lib_path? string Overrides the default path for libnitpick.
+--- @field data_path? string Overrides the defualt data path for data storage.
+--- @field server_url? string Overrides the default nitpick server url.
 
 ---@class NitpickConfig
 ---@field lib Nitpick?
@@ -37,8 +38,7 @@ function nitpick.setup(user_opts)
 	end
 
 	local repo_name = vim.fs.basename(vim.fn.getcwd())
-	local np_data_path = vim.fn.stdpath("data");
-	nitpick.lib = lib:new(repo_name, np_data_path, opts.server_url)
+	nitpick.lib = lib:new(repo_name, opts.data_path, opts.server_url)
 end
 
 ---@param host string
