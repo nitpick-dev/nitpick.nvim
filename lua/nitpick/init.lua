@@ -228,13 +228,13 @@ function nitpick.load_activity()
 end
 
 function nitpick.open_notes()
-	local editor_data_path = vim.fn.stdpath("data")
-	local repo_name = vim.fs.basename(vim.fn.getcwd())
-	local note_path = string.format(
-		"%s/nitpick/%s_notes.md",
-		editor_data_path,
-		repo_name
-	)
+	assert_nitpick()
+
+	local note_path = nitpick.lib:notes_path()
+	if note_path == "" then
+		vim.notify("Could not open notes.", vim.log.levels.ERROR)
+		return
+	end
 
 	vim.cmd.vsplit()
 	vim.cmd.e(note_path)

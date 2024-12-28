@@ -27,6 +27,9 @@ int np_activity(np_app app, char* buf);
 
 int np_start_review(np_app app, char* buf);
 int np_end_review(np_app app, char* buf);
+
+// NOTE: this is an experimental feature. the api is likely to change.
+int np_notes_path(np_app app, char* buf);
 ]])
 
 --- @class Nitpick
@@ -141,6 +144,15 @@ end
 function lib:end_review()
 	local buf = ffi.new("char[?]", 100)
 	local len = libnitpick.np_end_review(self.app, buf)
+
+	return ffi.string(buf, len)
+end
+
+--- Loads the path to the notes file for the repo.
+--- @returns string
+function lib:notes_path()
+	local buf = ffi.new("char[?]", 500)
+	local len = libnitpick.np_notes_path(self.app, buf)
 
 	return ffi.string(buf, len)
 end
