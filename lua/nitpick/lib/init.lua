@@ -5,7 +5,7 @@ local libnitpick
 
 
 ffi.cdef([[
-typedef void* np_app;
+typedef void* np_ctx;
 
 typedef struct {
 	const uint16_t line_start;
@@ -17,25 +17,25 @@ typedef struct {
 typedef enum { comment_add } event_kind;
 
 // NOTE: data_path and server_url are optional
-np_app np_new(char* repo_name, char* data_path, char* server_url);
-void np_free(np_app app);
+np_ctx np_new(char* repo_name, char* data_path, char* server_url);
+void np_free(np_ctx ctx);
 
-bool np_authorize(np_app app, char* host, char* token);
+bool np_authorize(np_ctx ctx, char* host, char* token);
 
-bool np_add_comment(np_app app, np_comment* comment);
-int np_activity(np_app app, char* buf);
+bool np_add_comment(np_ctx ctx, np_comment* comment);
+int np_activity(np_ctx ctx, char* buf);
 
-int np_start_review(np_app app, char* buf);
-int np_end_review(np_app app, char* buf);
+int np_start_review(np_ctx ctx, char* buf);
+int np_end_review(np_ctx ctx, char* buf);
 
 // NOTE: this is an experimental feature. the api is likely to change.
-int np_notes_path(np_app app, char* buf);
+int np_notes_path(np_ctx ctx, char* buf);
 ]])
 
 --- @class Nitpick
---- @field app ffi.cdata*?
+--- @field ctx ffi.cdata*?
 local lib = {
-	app = nil,
+	ctx = nil,
 }
 
 --- Load libnitpick
@@ -82,12 +82,12 @@ function lib:new(repo_name, data_path_override, server_url_override)
 		ffi.copy(c_server_url, server_url_override)
 	end
 
-	local app = libnitpick.np_new(c_repo_name, c_data_path, c_server_url)
-	ffi.gc(app, libnitpick.np_free)
+	local ctx = libnitpick.np_new(c_repo_name, c_data_path, c_server_url)
+	ffi.gc(ctx, libnitpick.np_free)
 
 	---@type Nitpick
 	local np = {
-		app = app,
+		ctx = ctx,
 	}
 
 	setmetatable(np, self);
@@ -96,9 +96,9 @@ function lib:new(repo_name, data_path_override, server_url_override)
 	return np
 end
 
----@param host string
----@param token string
----@return boolean success
+--- @param host string
+--- @param token string
+--- @return boolean success
 function lib:authorize(host, token)
 	local c_host = ffi.new("char[?]", #host + 1)
 	ffi.copy(c_host, host)
@@ -108,42 +108,42 @@ function lib:authorize(host, token)
 
 	-- FIXME: return an error code so we can display a message why the operation
 	-- failed
-	return libnitpick.np_authorize(self.app, c_host, c_token)
+	return libnitpick.np_authorize(self.ctx, c_host, c_token)
 end
 
----@param comment Comment
----@return boolean success
+--- @param comment Comment
+--- @return boolean success
 function lib:add_comment(comment)
 	local c_comment = ffi.new("np_comment", comment)
 
-	return libnitpick.np_add_comment(self.app, c_comment)
+	return libnitpick.np_add_comment(self.ctx, c_comment)
 end
 
----@return string
+--- @return string
 function lib:activity()
 	local buf = ffi.new("char[?]", 5120)
 
 	-- FIXME: at some point, it'll probably be good for this to be async
-	local len = libnitpick.np_activity(self.app, buf)
+	local len = libnitpick.np_activity(self.ctx, buf)
 	return ffi.string(buf, len)
 end
 
----Starts a review. If a review was previously conducted, this will start from
----the ending commit of the previous review. Nothing is returned otherwise.
----@return string
+--- Starts a review. If a review was previously conducted, this will start from
+--- the ending commit of the previous review. Nothing is returned otherwise.
+--- @return string
 function lib:start_review()
 	local buf = ffi.new("char[?]", 100)
-	local len = libnitpick.np_start_review(self.app, buf)
+	local len = libnitpick.np_start_review(self.ctx, buf)
 
 	return ffi.string(buf, len)
 end
 
----Ends a review. The current commit will become the starting commit the next
----time a review is started. The current commit is returned.
----@return string
+--- Ends a review. The current commit will become the starting commit the next
+--- time a review is started. The current commit is returned.
+--- @return string
 function lib:end_review()
 	local buf = ffi.new("char[?]", 100)
-	local len = libnitpick.np_end_review(self.app, buf)
+	local len = libnitpick.np_end_review(self.ctx, buf)
 
 	return ffi.string(buf, len)
 end
@@ -152,7 +152,7 @@ end
 --- @returns string
 function lib:notes_path()
 	local buf = ffi.new("char[?]", 500)
-	local len = libnitpick.np_notes_path(self.app, buf)
+	local len = libnitpick.np_notes_path(self.ctx, buf)
 
 	return ffi.string(buf, len)
 end
