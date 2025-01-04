@@ -3,7 +3,7 @@
 Neovim plugin for nitpick.
 
 **Notice:** Development for this plugin is done in the
-[nitpick-dev/editors](https://github.com/nitpick-dev/editors/tree/main/nvim)
+[nitpick-dev/editors](https://github.com/nitpick-dev/editors/tree/main/src/plugins/nvim)
 monorepo and released to
 [nitpick-dev/nitpick.nvim](https://github.com/nitpick-dev/nitpick.nvim).
 
