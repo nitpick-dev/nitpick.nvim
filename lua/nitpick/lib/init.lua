@@ -82,13 +82,17 @@ function lib:new(repo_name, data_path_override, server_url_override)
 		ffi.copy(c_server_url, server_url_override)
 	end
 
-	local ctx = libnitpick.np_new(c_repo_name, c_data_path, c_server_url)
-	ffi.gc(ctx, libnitpick.np_free)
-
-	---@type Nitpick
+	--- @type Nitpick
 	local np = {
-		ctx = ctx,
+		ctx = libnitpick.np_new(c_repo_name, c_data_path, c_server_url),
 	}
+
+	-- Ensure that a call the clean up happens before neovim exists.
+	vim.api.nvim_create_autocmd("VimLeavePre", {
+		callback = function()
+			libnitpick.np_free(np.ctx)
+		end,
+	})
 
 	setmetatable(np, self);
 	self.__index = self
