@@ -259,6 +259,27 @@ function nitpick.start_review(start_commit)
 	end
 end
 
+-- FIXME: this is experimental. we should figure out the actual api for
+-- filhistory and use lua to call. we should also merge with `start_above`
+---@param start_commit string?
+function nitpick.range_start_review(start_commit)
+	assert_nitpick()
+
+	if start_commit ~= nil then
+		vim.cmd(string.format("DiffviewFileHistory --range=%s..HEAD", start_commit))
+		return
+	end
+
+	local commit = nitpick.lib:start_review()
+	if commit ~= nil and commit ~= "" then
+		vim.cmd(string.format("DiffviewFileHistory --range=%s..HEAD", commit))
+	else
+		onboarder.start(function(selected_commit)
+			vim.cmd(string.format("DiffviewFileHistory --range=%s..HEAD", selected_commit))
+		end)
+	end
+end
+
 function nitpick.end_review()
 	assert_nitpick()
 

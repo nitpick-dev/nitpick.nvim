@@ -23,7 +23,7 @@ describe("command", function()
 	describe("completions", function()
 		test("return all completions when cmd is emtpy", function()
 			local cmp = command.complete("Nitpick ")
-			assert.are_same({ "comment", "start", "end", "activity", "notes", "authorize" }, cmp)
+			assert.are_same({ "comment", "start", "rstart", "end", "activity", "notes", "authorize" }, cmp)
 		end)
 
 		test("filter by leading characters", function()
