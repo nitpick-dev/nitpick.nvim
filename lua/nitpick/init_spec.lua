@@ -18,7 +18,7 @@ describe("nitpick", function()
 		local authorize = stub(lib, "authorize")
 		authorize.returns(true)
 
-		nitpick.authorize("github", "some_token")
+		nitpick.authorize({ args = { "github", "some_token" } })
 		assert.stub(log).was.called_with(
 			"github was successfully authorized.",
 			vim.log.levels.INFO
@@ -27,7 +27,7 @@ describe("nitpick", function()
 		log:clear()
 
 		authorize.returns(false)
-		nitpick.authorize("github", "some_token")
+		nitpick.authorize({ args = { "github", "some_token" } })
 		assert.stub(log).was.called_with(
 			"failed to authorize github.",
 			vim.log.levels.INFO
@@ -40,7 +40,7 @@ describe("nitpick", function()
 		local start_review = stub(lib, "start_review")
 		start_review.returns("")
 
-		nitpick.start_review()
+		nitpick.start_review({ args = {} })
 
 		assert.stub(onboarder_start).called(1)
 	end)
@@ -51,7 +51,7 @@ describe("nitpick", function()
 		local start_review = stub(lib, "start_review")
 		start_review.returns("abc123")
 
-		nitpick.start_review()
+		nitpick.start_review({ args = {} })
 
 		assert.stub(diffview_open).was.called_with("abc123", "HEAD")
 	end)
@@ -60,7 +60,7 @@ describe("nitpick", function()
 		local diffview_open = stub(diffview, "open")
 		local start_review = stub(lib, "start_review")
 
-		nitpick.start_review("xyz123")
+		nitpick.start_review({ args = { "xyz123" } })
 
 		assert.stub(diffview_open).was.called_with("xyz123", "HEAD")
 		assert.stub(start_review).called(0)

@@ -41,10 +41,27 @@ function nitpick.setup(user_opts)
 	nitpick.lib = lib:new(repo_name, opts.data_path, opts.server_url)
 end
 
----@param host string
----@param token string
-function nitpick.authorize(host, token)
+--- Dispatch handler for the next version of nitpick.
+--- @param payload DispatchPayload
+function nitpick.next(payload)
 	assert_nitpick()
+
+	-- FIXME: we could create validation for this
+	local fn = table.remove(payload.args, 1)
+	local args = payload.args
+
+	vim.notify(string.format("next dispatch: %s with args %s", fn, table.concat(args, ", ")))
+end
+
+--- Adds a token for a given host to the config file. The `args` of the payload
+--- must be ordered such that args[1] = host, and args[2] = token.
+--- @param payload DispatchPayload
+function nitpick.authorize(payload)
+	assert_nitpick()
+
+	-- FIXME: we could create validation for this
+	local host = payload.args[1]
+	local token = payload.args[2]
 
 	local authorized = nitpick.lib:authorize(host, token)
 
@@ -57,8 +74,6 @@ function nitpick.authorize(host, token)
 end
 
 -- FIXME: this is not testable. we need to fix that.
--- FIXME: passing the comment is temporary. we should open a split buffer to
--- leave the comment
 ---@param payload DispatchPayload
 function nitpick.add_comment(payload)
 	assert_nitpick()
@@ -96,6 +111,9 @@ function nitpick.add_comment(payload)
 	end
 
 	if #payload.args ~= 0 then
+		-- When the the comment is passed inline, the payload args will be a table
+		-- of tokens. In order to commit the comment, we need to convert it to a
+		-- single string.
 		commit_comment(table.concat(payload.args, " "))
 		return
 	end
@@ -240,9 +258,12 @@ function nitpick.open_notes()
 	vim.cmd.e(note_path)
 end
 
----@param start_commit string?
-function nitpick.start_review(start_commit)
+--- @param payload DispatchPayload
+function nitpick.start_review(payload)
 	assert_nitpick()
+
+	-- FIXME: we could create validation for this
+	local start_commit = payload.args[1]
 
 	if start_commit ~= nil then
 		diffview.open(start_commit, "HEAD")
@@ -261,9 +282,12 @@ end
 
 -- FIXME: this is experimental. we should figure out the actual api for
 -- filhistory and use lua to call. we should also merge with `start_above`
----@param start_commit string?
-function nitpick.range_start_review(start_commit)
+--- @param payload DispatchPayload
+function nitpick.range_start_review(payload)
 	assert_nitpick()
+
+	-- FIXME: we could create validation for this
+	local start_commit = payload.args[1]
 
 	if start_commit ~= nil then
 		vim.cmd(string.format("DiffviewFileHistory --range=%s..HEAD", start_commit))
