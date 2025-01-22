@@ -22,6 +22,7 @@ void np_free(np_ctx ctx);
 
 bool np_authorize(np_ctx ctx, char* host, char* token);
 
+bool np_is_tracked_file(np_ctx ctx, char* file_path);
 bool np_add_comment(np_ctx ctx, np_comment* comment);
 int np_activity(np_ctx ctx, char* buf);
 
@@ -114,6 +115,16 @@ function lib:authorize(host, token)
 	-- failed
 	return libnitpick.np_authorize(self.ctx, c_host, c_token)
 end
+
+--- @param file_path string 
+--- @return boolean
+function lib:is_tracked_file(file_path)
+	local c_file_path = ffi.new("char[?]", #file_path + 1)
+	ffi.copy(c_file_path, file_path)
+
+	return libnitpick.np_is_tracked_file(self.ctx, c_file_path)
+end
+
 
 --- @param comment Comment
 --- @return boolean success

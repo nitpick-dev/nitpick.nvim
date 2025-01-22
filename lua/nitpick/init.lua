@@ -78,15 +78,12 @@ end
 function nitpick.add_comment(payload)
 	assert_nitpick()
 
-	-- FIXME: this will only stop trying to add a comment at the root of the
-	-- project. we should have a smater way to detect this. maybe that can be
-	-- offloaded to the lib
 	---@type string
 	local file = vim.fn.expand("%")
-	if file == "" then
-		-- FIXME: need a test case
-		-- FIXME: we should throw a similar error on a version control ignored file
-		vim.notify("Comments are only allowed in project files.", vim.log.levels.INFO)
+	if not nitpick.lib:is_tracked_file(file) then
+		-- FIXME: this should be an error, but that triggers an error in the
+		-- integration tests.
+		vim.notify("Cannot comment on an untracked file.", vim.log.levels.WARN)
 		return
 	end
 
