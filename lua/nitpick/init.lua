@@ -4,6 +4,7 @@ if not has_diffview then
 	return
 end
 
+local buffer = require("nitpick.buffer")
 local lib = require("nitpick.lib")
 local onboarder = require("nitpick.onboarder")
 
@@ -118,25 +119,11 @@ function nitpick.add_comment(payload)
 	-- FIXME: we should do split vs vsplit based on the size of the window. or
 	-- maybe off a user setting
 	vim.cmd("vnew")
-	local buf = vim.api.nvim_get_current_buf()
 
-	vim.api.nvim_buf_set_option(buf, "buftype", "acwrite")
-	vim.api.nvim_buf_set_option(buf, "bufhidden", "wipe")
-	vim.api.nvim_buf_set_name(buf, "nitpick comment")
-
-	vim.api.nvim_create_autocmd("BufWriteCmd", {
-		group = np_group,
-		buffer = buf,
-		callback = function()
-			local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
-			local content = table.concat(lines, "\n")
-
-			commit_comment(content)
-
-			vim.api.nvim_buf_set_option(buf, "modified", false)
-			return true
-		end,
-	})
+	-- FIXME: this name kind of sucks
+	buffer.writable_action("nitpick comment", function(lines)
+		commit_comment(table.concat(lines, "\n"))
+	end)
 end
 
 local activity_title = "nitpick activity"
