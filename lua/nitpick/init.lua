@@ -88,42 +88,36 @@ function nitpick.add_comment(payload)
 		return
 	end
 
-	-- FIXME: should we just make end line be the same as start if it's one line?
-	if payload.line_start == payload.line_end then
-		payload.line_end = 0
-	end
-
-	-- HACK: use the same logic between an inline comment and a buffer comment.
-	-- there has to be something way cooler than this
-	local function commit_comment(text)
-		local success = nitpick.lib:add_comment({
-			line_start = payload.line_start,
-			line_end = payload.line_end,
-			file = file,
-			text = text,
-		})
-
-		if not success then
-			vim.notify("Unable to add comment.", vim.log.levels.ERROR)
-		end
-	end
+	--- @type Comment
+	local comment = {
+		line_start = payload.line_start,
+		-- FIXME: should we just make end be the same as start if it's one line?
+		line_end = payload.line_end == payload.line_start and 0 or payload.line_end,
+		file = file,
+		text = "",
+	}
 
 	if #payload.args ~= 0 then
 		-- When the the comment is passed inline, the payload args will be a table
 		-- of tokens. In order to commit the comment, we need to convert it to a
 		-- single string.
-		commit_comment(table.concat(payload.args, " "))
-		return
+		comment.text = table.concat(payload.args, " ")
+		local success = nitpick.lib:add_comment(comment)
+
+		if not success then
+			vim.notify("Unable to add comment.", vim.log.levels.ERROR)
+		end
+	else
+		local buf = buffer.split_make("nitpick comment")
+		buffer.add_write_autocmd(buf, function(lines)
+			comment.text = table.concat(lines, "\n")
+			local success = nitpick.lib:add_comment(comment)
+
+			if not success then
+				vim.notify("Unable to add comment.", vim.log.levels.ERROR)
+			end
+		end)
 	end
-
-	-- FIXME: we should do split vs vsplit based on the size of the window. or
-	-- maybe off a user setting
-	vim.cmd("vnew")
-
-	-- FIXME: this name kind of sucks
-	buffer.writable_action("nitpick comment", function(lines)
-		commit_comment(table.concat(lines, "\n"))
-	end)
 end
 
 local activity_title = "nitpick activity"

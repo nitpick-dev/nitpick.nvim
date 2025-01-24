@@ -5,14 +5,30 @@ local np_group = vim.api.nvim_create_augroup("NitpickGroup", { clear = true })
 
 local buffer = {}
 
+-- FIXME: figure out what this type is or where we can pull it from
+--- @class VimBuffer
+
+--- Opens a split and returns the new buffer.
+--- @param name string The name for the buffer that will be created.
+--- @return VimBuffer buf
+function buffer.split_make(name)
+	-- FIXME: screen size logic: a new split should open vertically when there's
+	-- enough space, horizontally otherwise.
+	-- potentially, we could do it off a user setting
+	vim.cmd("vnew")
+
+	--- @type VimBuffer
+	local buf = vim.api.nvim_get_current_buf()
+	vim.api.nvim_buf_set_name(buf, name)
+
+	return buf
+end
+
 --- Opens a special buffer that triggers an action when and only when the buffer
 --- is written and closed.
---- @param buf_name string
+--- @param buf VimBuffer
 --- @param on_close fun(contents: string[]) The lines of the buffer
-function buffer.writable_action(buf_name, on_close)
-	local buf = vim.api.nvim_get_current_buf()
-	vim.api.nvim_buf_set_name(buf, buf_name)
-
+function buffer.add_write_autocmd(buf, on_close)
 	vim.api.nvim_buf_set_option(buf, "buftype", "acwrite")
 	vim.api.nvim_buf_set_option(buf, "bufhidden", "wipe")
 
