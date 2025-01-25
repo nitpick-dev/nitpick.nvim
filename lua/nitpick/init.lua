@@ -8,7 +8,6 @@ local buffer = require("nitpick.buffer")
 local lib = require("nitpick.lib")
 local onboarder = require("nitpick.onboarder")
 
-local np_group = vim.api.nvim_create_augroup("NitpickGroup", { clear = true })
 local np_namespace = vim.api.nvim_create_namespace("Nitpick")
 
 --- @class NitpickOptions
@@ -97,27 +96,15 @@ function nitpick.add_comment(payload)
 		text = "",
 	}
 
-	if #payload.args ~= 0 then
-		-- When the the comment is passed inline, the payload args will be a table
-		-- of tokens. In order to commit the comment, we need to convert it to a
-		-- single string.
-		comment.text = table.concat(payload.args, " ")
+	local buf = buffer.split_make("nitpick comment")
+	buffer.add_write_autocmd(buf, function(lines)
+		comment.text = table.concat(lines, "\n")
 		local success = nitpick.lib:add_comment(comment)
 
 		if not success then
 			vim.notify("Unable to add comment.", vim.log.levels.ERROR)
 		end
-	else
-		local buf = buffer.split_make("nitpick comment")
-		buffer.add_write_autocmd(buf, function(lines)
-			comment.text = table.concat(lines, "\n")
-			local success = nitpick.lib:add_comment(comment)
-
-			if not success then
-				vim.notify("Unable to add comment.", vim.log.levels.ERROR)
-			end
-		end)
-	end
+	end)
 end
 
 local activity_title = "nitpick activity"
