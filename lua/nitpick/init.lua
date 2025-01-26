@@ -41,16 +41,54 @@ function nitpick.setup(user_opts)
 	nitpick.lib = lib:new(repo_name, opts.data_path, opts.server_url)
 end
 
---- Dispatch handler for the next version of nitpick.
+--- Dispatch handler for the next version of nitpick. In this case, the payload
+--- should contain a DispatchPayload where the first arg is the name of the next
+--- function. The remaining args in the payload are the DispatchPayload args.
 --- @param payload DispatchPayload
 function nitpick.next(payload)
+	-- FIXME: we could create validation for this
+	local cmd = table.remove(payload.args, 1)
+
+	local supported_next_cmd = { "comment" }
+	if not vim.tbl_contains(supported_next_cmd, cmd) then
+		vim.notify(
+			string.format("%s is not a supported next command.", cmd),
+			vim.log.levels.ERROR
+		)
+		return
+	end
+
+	return nitpick[cmd](payload)
+end
+
+--- @param payload DispatchPayload
+function nitpick.comment(payload)
 	assert_nitpick()
 
-	-- FIXME: we could create validation for this
-	local fn = table.remove(payload.args, 1)
-	local args = payload.args
+	local file = vim.fn.expand("%")
+	if not nitpick.lib:is_tracked_file(file) then
+		-- FIXME: this should be an error, but that triggers an error in the
+		-- integration tests.
+		vim.notify("Cannot comment on an untracked file.", vim.log.levels.WARN)
+		return
+	end
 
-	vim.notify(string.format("next dispatch: %s with args %s", fn, table.concat(args, ", ")))
+	local buf = buffer.split_make("nitpick comment")
+	buffer.add_write_autocmd(buf, function(lines)
+
+		-- FIXME: what's the best way to make this buffer?
+		local np_buf = lib.create_buffer(buf)
+		local success = nitpick.lib:write_comment(np_buf, {
+			line_start = payload.line_start,
+			-- FIXME: should we just make end be the same as start if it's one line?
+			line_end = payload.line_end == payload.line_start and 0 or payload.line_end,
+			file = file,
+		})
+
+		if not success then
+			vim.notify("Unable to add comment.", vim.log.levels.ERROR)
+		end
+	end)
 end
 
 --- Adds a token for a given host to the config file. The `args` of the payload

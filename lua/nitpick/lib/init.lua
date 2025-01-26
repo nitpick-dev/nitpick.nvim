@@ -31,6 +31,29 @@ int np_end_review(np_ctx ctx, char* buf);
 
 // NOTE: this is an experimental feature. the api is likely to change.
 int np_notes_path(np_ctx ctx, char* buf);
+
+
+// NOTE: everything below here (in cdef) is experimental.
+
+typedef struct {
+	const uint16_t line_start;
+	const uint16_t line_end;
+	const char* file;
+} np_location;
+
+typedef void* np_editor_handle;
+
+// Get the contents of the buffer.
+typedef char* (*np_buf_get_text_fn)(np_editor_handle handle);
+
+typedef struct {
+	// The editor specific identifier. Not sure if this is useful yet.
+	np_editor_handle handle;
+
+	np_buf_get_text_fn get_text;
+} np_buf_handle;
+
+bool np_write_comment(np_ctx ctx, np_buf_handle* handle, np_location* location);
 ]])
 
 --- @class Nitpick
@@ -116,7 +139,7 @@ function lib:authorize(host, token)
 	return libnitpick.np_authorize(self.ctx, c_host, c_token)
 end
 
---- @param file_path string 
+--- @param file_path string
 --- @return boolean
 function lib:is_tracked_file(file_path)
 	local c_file_path = ffi.new("char[?]", #file_path + 1)
@@ -124,7 +147,6 @@ function lib:is_tracked_file(file_path)
 
 	return libnitpick.np_is_tracked_file(self.ctx, c_file_path)
 end
-
 
 --- @param comment Comment
 --- @return boolean success
@@ -170,6 +192,30 @@ function lib:notes_path()
 	local len = libnitpick.np_notes_path(self.ctx, buf)
 
 	return ffi.string(buf, len)
+end
+
+function lib.create_buffer(buf)
+	return ffi.new("np_buf_handle", {
+		handle = ffi.cast("np_editor_handle", buf),
+		get_text = ffi.cast("np_buf_get_text_fn", function()
+			local lines = vim.api.nvim_buf_get_lines(0, 0, -1, true)
+			local contents = table.concat(lines, "\n");
+			local c_contents = ffi.new("char[?]", #contents + 1)
+			ffi.copy(c_contents, contents)
+			return c_contents
+		end),
+	})
+end
+
+-- FIXME: the buffer should be cdata, can we do that?
+--- @param buf NpBuffer
+--- @param location Location
+function lib:write_comment(buf, location)
+	return libnitpick.np_write_comment(
+		self.ctx,
+		buf,
+		ffi.new("np_location", location)
+	)
 end
 
 return lib
