@@ -4,6 +4,7 @@ if not has_diffview then
 	return
 end
 
+local bindings = require("nitpick.bindings")
 local buffer = require("nitpick.buffer")
 local lib = require("nitpick.lib")
 local onboarder = require("nitpick.onboarder")
@@ -74,19 +75,30 @@ function nitpick.comment(payload)
 	end
 
 	local buf = buffer.split_make("nitpick comment")
-	buffer.add_write_autocmd(buf, function(lines)
-
-		-- FIXME: what's the best way to make this buffer?
-		local np_buf = lib.create_buffer(buf)
-		local success = nitpick.lib:write_comment(np_buf, {
-			line_start = payload.line_start,
+	-- FIXME: the callback to `add_write_autocmd` passes in the contents of the
+	-- buffer. we don't need that anymore. we should reconsider if we should keep
+	-- doing it. additionally, we could just change this to something like
+	-- `add_event_listener` or something less specific to autocmd? not sure if
+	-- that matters much though.
+	buffer.add_write_autocmd(buf, function()
+		local buf_handle = bindings.make_np_buf_handle(buf)
+		-- FIXME: is it a cleaner api to pass a table over each field?
+		local location = bindings.make_np_location(
+			file,
+			payload.line_start,
 			-- FIXME: should we just make end be the same as start if it's one line?
-			line_end = payload.line_end == payload.line_start and 0 or payload.line_end,
-			file = file,
-		})
+			payload.line_end == payload.line_start and 0 or payload.line_end
+		)
+
+		-- FIXME: bindings is kind of a gross name, right?
+		local success, err_msg = bindings.write_comment(
+			nitpick.lib.ctx,
+			buf_handle,
+			location
+		)
 
 		if not success then
-			vim.notify("Unable to add comment.", vim.log.levels.ERROR)
+			vim.notify(err_msg or "Unknown error", vim.log.levels.ERROR)
 		end
 	end)
 end
