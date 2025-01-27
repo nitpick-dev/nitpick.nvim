@@ -4,9 +4,9 @@ if not has_diffview then
 	return
 end
 
-local bindings = require("nitpick.bindings")
 local buffer = require("nitpick.buffer")
 local lib = require("nitpick.lib")
+local np = require("nitpick.np")
 local onboarder = require("nitpick.onboarder")
 
 local np_namespace = vim.api.nvim_create_namespace("Nitpick")
@@ -81,17 +81,15 @@ function nitpick.comment(payload)
 	-- `add_event_listener` or something less specific to autocmd? not sure if
 	-- that matters much though.
 	buffer.add_write_autocmd(buf, function()
-		local buf_handle = bindings.make_np_buf_handle(buf)
-		-- FIXME: is it a cleaner api to pass a table over each field?
-		local location = bindings.make_np_location(
+		local buf_handle = np.make_buf_handle(buf)
+		local location = np.make_location(
 			file,
 			payload.line_start,
 			-- FIXME: should we just make end be the same as start if it's one line?
 			payload.line_end == payload.line_start and 0 or payload.line_end
 		)
 
-		-- FIXME: bindings is kind of a gross name, right?
-		local success, err_msg = bindings.write_comment(
+		local success, err_msg = np.write_comment(
 			nitpick.lib.ctx,
 			buf_handle,
 			location

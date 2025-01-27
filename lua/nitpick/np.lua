@@ -21,10 +21,15 @@ typedef struct {
 	np_buf_get_text_fn get_text;
 } np_buf_handle;
 
-bool np_write_comment(np_ctx ctx, np_buf_handle* handle, np_location* location);
+typedef enum {
+	comment_write_failure = 1,
+} np_error_code;
+
+np_error_code np_write_comment(np_ctx ctx, np_buf_handle* handle, np_location* location);
+char* np_get_error_msg(np_error_code);
 ]])
 
-local bindings = {}
+local np = {}
 
 --- An abstraction defined by libnitpick to allow the library to update,
 --- decorate, and read text from an editor buffer.
@@ -43,7 +48,7 @@ local bindings = {}
 --- Create a new buffer handle to pass to libnitpick.
 --- @param buf VimBuffer
 --- @return NpBufHandle
-function bindings.make_np_buf_handle(buf)
+function np.make_buf_handle(buf)
 	--- @type NpBufHandle
 	local handle = ffi.new("np_buf_handle", {
 		handle = ffi.cast("np_editor_handle", buf),
@@ -63,7 +68,7 @@ end
 --- @param file string
 --- @param line_start number
 --- @param line_end number
-function bindings.make_np_location(file, line_start, line_end)
+function np.make_location(file, line_start, line_end)
 	return ffi.new("np_location", {
 		file = file,
 		line_start = line_start,
@@ -76,29 +81,28 @@ end
 --- @param location NpLocation
 --- @return boolean success `true` if the operation is successfule, `false` otherwise. When `false`, `error_message` will be present.
 --- @return string? error_message Human readible error message provided by the library. This will only be present when `success` is true.
-function bindings.write_comment(ctx, buf_handle, location)
+function np.write_comment(ctx, buf_handle, location)
 	-- FIXME: this is copied directly from the `lib/init.lua` and modified for
 	-- development specific use. we should have a single set up. right now, we're
 	-- just playing around with how this could be built differently
-	local default_lib_path = string.format("./zig-out/bin/libnitpick.so")
+	local default_lib_path = string.format("./zig-out/lib/libnitpick.so")
 	local lib_path = vim.fn.expand(default_lib_path)
 
 	local ok, library = pcall(ffi.load, lib_path)
 	if not ok then
-		return false
+		return false, "Failed to load library"
 	end
 
-	-- FIXME: let's update this so that it returns an error code. if there's an
-	-- error, we'll get a message and return that.
-	local success = library.np_write_comment(ctx, buf_handle, location)
+	local error_code = library.np_write_comment(ctx, buf_handle, location)
+	local success = error_code == 0
 
 	--- @type string?
-	local err_msg = nil
+	local error_msg = nil
 	if not success then
-		err_msg = "Unable to add comment."
+		error_msg = ffi.string(library.np_get_error_msg(error_code))
 	end
 
-	return success, err_msg
+	return success, error_msg
 end
 
-return bindings
+return np
