@@ -22,7 +22,8 @@ typedef struct {
 } np_buf_handle;
 
 typedef enum {
-	comment_write_failure = 1,
+	none,
+	comment_write_failure,
 } np_error_code;
 
 np_error_code np_write_comment(np_ctx ctx, np_buf_handle* handle, np_location* location);
@@ -94,7 +95,7 @@ function np.write_comment(ctx, buf_handle, location)
 	end
 
 	local error_code = library.np_write_comment(ctx, buf_handle, location)
-	local success = error_code == 0
+	local success = tonumber(error_code) == 0
 
 	--- @type string?
 	local error_msg = nil

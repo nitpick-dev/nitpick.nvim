@@ -31,29 +31,6 @@ int np_end_review(np_ctx ctx, char* buf);
 
 // NOTE: this is an experimental feature. the api is likely to change.
 int np_notes_path(np_ctx ctx, char* buf);
-
-
-// NOTE: everything below here (in cdef) is experimental.
-
-typedef struct {
-	const uint16_t line_start;
-	const uint16_t line_end;
-	const char* file;
-} np_location;
-
-typedef void* np_editor_handle;
-
-// Get the contents of the buffer.
-typedef char* (*np_buf_get_text_fn)(np_editor_handle handle);
-
-typedef struct {
-	// The editor specific identifier. Not sure if this is useful yet.
-	np_editor_handle handle;
-
-	np_buf_get_text_fn get_text;
-} np_buf_handle;
-
-bool np_write_comment(np_ctx ctx, np_buf_handle* handle, np_location* location);
 ]])
 
 --- @class Nitpick
