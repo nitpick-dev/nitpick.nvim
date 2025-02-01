@@ -50,7 +50,7 @@ function nitpick.next(payload)
 	-- FIXME: we could create validation for this
 	local cmd = table.remove(payload.args, 1)
 
-	local supported_next_cmd = { "comment" }
+	local supported_next_cmd = { "comment", "activity" }
 	if not vim.tbl_contains(supported_next_cmd, cmd) then
 		vim.notify(
 			string.format("%s is not a supported next command.", cmd),
@@ -99,6 +99,34 @@ function nitpick.comment(payload)
 			vim.notify(err_msg or "Unknown error", vim.log.levels.ERROR)
 		end
 	end)
+end
+
+function nitpick.activity()
+	assert_nitpick()
+
+	-- FIXME: this is probably not what we want to do, maybe a popup or a new tab
+	-- overall, this logic should be cleaned up.
+	local existing_buf = vim.fn.bufnr("nitpick activity")
+	local buf = existing_buf ~= -1
+			and existing_buf
+			or vim.api.nvim_create_buf(false, true)
+
+	vim.api.nvim_set_current_buf(buf)
+	vim.api.nvim_buf_set_name(buf, "nitpick activity")
+
+	local buf_handle = np.make_buf_handle(buf)
+
+	-- Before updating the contents of the buffer, we need to make sure that it's
+	-- editable. Once the contents have been writte, we can toggle back to a
+	-- readonly buffer.
+	vim.api.nvim_buf_set_option(buf, "readonly", false)
+
+	-- FIXME: handle error
+	np.get_activity(nitpick.lib.ctx, buf_handle)
+
+	-- We don't want users to be able to modify anything in this buffer (or
+	-- accidentally save it) after we set the contents, so we set it to readonly.
+	vim.api.nvim_buf_set_option(buf, "readonly", true)
 end
 
 --- Adds a token for a given host to the config file. The `args` of the payload

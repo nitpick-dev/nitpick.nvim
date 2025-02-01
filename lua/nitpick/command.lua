@@ -53,7 +53,7 @@ function command.complete(cmd_line)
 		-- The sub command for next is the list of functions included in the next
 		-- release. Use the function name as it would appear in the dispatch map. If
 		-- there is nothing for the next release, this may be empty.
-		["next"] = { "comment" },
+		["next"] = { "comment", "activity" },
 	}
 
 	local tokens = vim.split(cmd_line, "%s+")

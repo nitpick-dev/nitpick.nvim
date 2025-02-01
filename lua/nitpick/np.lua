@@ -11,14 +11,15 @@ typedef struct {
 
 typedef void* np_editor_handle;
 
-// Get the contents of the buffer.
 typedef char* (*np_buf_get_text_fn)(np_editor_handle handle);
+typedef void (*np_buf_set_text_fn)(np_editor_handle handle);
 
 typedef struct {
 	// The editor specific identifier. Not sure if this is useful yet.
 	np_editor_handle handle;
 
 	np_buf_get_text_fn get_text;
+	np_buf_set_text_fn set_text;
 } np_buf_handle;
 
 typedef enum {
@@ -26,11 +27,24 @@ typedef enum {
 	comment_write_failure,
 } np_error_code;
 
+np_error_code np_get_activity(np_ctx ctx, np_buf_handle* handle);
 np_error_code np_write_comment(np_ctx ctx, np_buf_handle* handle, np_location* location);
 char* np_get_error_msg(np_error_code);
 ]])
 
 local np = {}
+
+--- @return boolean ok
+--- @return ffi.namespace*? lib
+function np.setup()
+	-- FIXME: this should be called once at startup of the app. for now, we'll
+	-- allow it to be called per fucntion. additionally, we're looking for an env
+	-- var. this is only intended for development purposes while we're building
+	-- out this alternative file. we should rely on the user's configuration like
+	-- we do in `lib/init.lua`.
+	local lib_path = vim.fn.expand(vim.env.LIB_PATH)
+	return pcall(ffi.load, lib_path)
+end
 
 --- An abstraction defined by libnitpick to allow the library to update,
 --- decorate, and read text from an editor buffer.
@@ -41,6 +55,28 @@ local np = {}
 --
 --- A common structure for specifiying metadata for an event.
 --- @class NpLocation
+
+--- @param buf_handle NpBufHandle
+--- @param ctx ffi.cdata*
+--- @return boolean success `true` if the operation is successfule, `false` otherwise. When `false`, `error_message` will be present.
+--- @return string? error_message Human readible error message provided by the library. This will only be present when `success` is true.
+function np.get_activity(ctx, buf_handle)
+	local ok, lib = np.setup()
+	if not ok  or lib == nil then
+		return false, "Failed to load library"
+	end
+
+	local error_code = lib.np_get_activity(ctx, buf_handle)
+	local success = tonumber(error_code) == 0
+
+	--- @type string?
+	local error_msg = nil
+	if not success then
+		error_msg = ffi.string(lib.np_get_error_msg(error_code))
+	end
+
+	return success, error_msg
+end
 
 -- FIXME: should the a neovim buffer be created with this as well? should we
 -- just make all the buffer operactions with a buf handle? should there be a
@@ -60,6 +96,10 @@ function np.make_buf_handle(buf)
 			ffi.copy(c_contents, contents)
 
 			return c_contents
+		end),
+		set_text = ffi.cast("np_buf_set_text_fn", function(text)
+			local lines = vim.split(ffi.string(text), "\n")
+			vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
 		end),
 	})
 
@@ -83,24 +123,18 @@ end
 --- @return boolean success `true` if the operation is successfule, `false` otherwise. When `false`, `error_message` will be present.
 --- @return string? error_message Human readible error message provided by the library. This will only be present when `success` is true.
 function np.write_comment(ctx, buf_handle, location)
-	-- FIXME: this is copied directly from the `lib/init.lua` and modified for
-	-- development specific use. we should have a single set up. right now, we're
-	-- just playing around with how this could be built differently
-	local default_lib_path = string.format("./zig-out/lib/libnitpick.so")
-	local lib_path = vim.fn.expand(default_lib_path)
-
-	local ok, library = pcall(ffi.load, lib_path)
-	if not ok then
+	local ok, lib = np.setup()
+	if not ok  or lib == nil then
 		return false, "Failed to load library"
 	end
 
-	local error_code = library.np_write_comment(ctx, buf_handle, location)
+	local error_code = lib.np_write_comment(ctx, buf_handle, location)
 	local success = tonumber(error_code) == 0
 
 	--- @type string?
 	local error_msg = nil
 	if not success then
-		error_msg = ffi.string(library.np_get_error_msg(error_code))
+		error_msg = ffi.string(lib.np_get_error_msg(error_code))
 	end
 
 	return success, error_msg
