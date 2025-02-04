@@ -85,7 +85,6 @@ function nitpick.comment(payload)
 		local location = np.make_location(
 			file,
 			payload.line_start,
-			-- FIXME: should we just make end be the same as start if it's one line?
 			payload.line_end == payload.line_start and 0 or payload.line_end
 		)
 
