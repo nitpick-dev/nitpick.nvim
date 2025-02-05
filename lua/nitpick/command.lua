@@ -21,6 +21,7 @@ local dispatch_map = {
 	["activity"] = "load_activity",
 	["comment"] = "add_comment",
 	["notes"] = "open_notes",
+	["todo"] = "open_todos",
 	["end"] = "end_review",
 	["start"] = "start_review",
 	["rstart"] = "range_start_review",
@@ -46,7 +47,7 @@ end
 --- @param cmd_line string Unparsed command line
 --- @return string[] commands Filtered list of possible commands
 function command.complete(cmd_line)
-	local available_commands = { "comment", "start", "rstart", "end", "activity", "notes", "authorize", "next" }
+	local available_commands = { "comment", "start", "rstart", "end", "activity", "notes", "todo", "authorize", "next" }
 	local sub_commands = {
 		["authorize"] = { "github" },
 

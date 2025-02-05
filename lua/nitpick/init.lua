@@ -298,6 +298,19 @@ function nitpick.open_notes()
 	vim.cmd.e(note_path)
 end
 
+function nitpick.open_todos()
+	assert_nitpick()
+
+	local todo_path = nitpick.lib:todos_path()
+	if todo_path == "" then
+		vim.notify("Could not open todos.", vim.log.levels.ERROR)
+		return
+	end
+
+	vim.cmd.vsplit()
+	vim.cmd.e(todo_path)
+end
+
 --- @param payload DispatchPayload
 function nitpick.start_review(payload)
 	assert_nitpick()

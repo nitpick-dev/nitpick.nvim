@@ -31,6 +31,7 @@ int np_end_review(np_ctx ctx, char* buf);
 
 // NOTE: this is an experimental feature. the api is likely to change.
 int np_notes_path(np_ctx ctx, char* buf);
+int np_todos_path(np_ctx ctx, char* buf);
 ]])
 
 --- @class Nitpick
@@ -167,6 +168,15 @@ end
 function lib:notes_path()
 	local buf = ffi.new("char[?]", 500)
 	local len = libnitpick.np_notes_path(self.ctx, buf)
+
+	return ffi.string(buf, len)
+end
+
+--- Loads the path to the notes file for the repo.
+--- @returns string
+function lib:todos_path()
+	local buf = ffi.new("char[?]", 500)
+	local len = libnitpick.np_todos_path(self.ctx, buf)
 
 	return ffi.string(buf, len)
 end
