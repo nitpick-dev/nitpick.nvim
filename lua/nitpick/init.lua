@@ -298,12 +298,12 @@ function nitpick.open_notes()
 	vim.cmd.e(note_path)
 end
 
-function nitpick.open_todos()
+function nitpick.open_tasks()
 	assert_nitpick()
 
-	local todo_path = nitpick.lib:todos_path()
+	local todo_path = nitpick.lib:tasks_path()
 	if todo_path == "" then
-		vim.notify("Could not open todos.", vim.log.levels.ERROR)
+		vim.notify("Could not open tasks.", vim.log.levels.ERROR)
 		return
 	end
 
