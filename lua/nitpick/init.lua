@@ -9,8 +9,6 @@ local lib = require("nitpick.lib")
 local np = require("nitpick.np")
 local onboarder = require("nitpick.onboarder")
 
-local np_namespace = vim.api.nvim_create_namespace("Nitpick")
-
 --- @class NitpickOptions
 --- @field lib_path? string Overrides the default path for libnitpick.
 --- @field data_path? string Overrides the defualt data path for data storage.
@@ -25,7 +23,10 @@ local nitpick = {
 ---Asserts that the nitpick library has been initialized. This will cause a
 ---crash, and there is no attempt at recovery.
 local function assert_nitpick()
-	assert(nitpick.lib ~= nil, "nitpick was not initialized or initialized incorrectly.")
+	assert(
+		nitpick.lib ~= nil,
+		"nitpick was not initialized or initialized incorrectly."
+	)
 end
 
 ---@param user_opts? NitpickOptions?
@@ -50,7 +51,7 @@ function nitpick.next(payload)
 	-- FIXME: we could create validation for this
 	local cmd = table.remove(payload.args, 1)
 
-	local supported_next_cmd = { "comment", "activity" }
+	local supported_next_cmd = {}
 	if not vim.tbl_contains(supported_next_cmd, cmd) then
 		vim.notify(
 			string.format("%s is not a supported next command.", cmd),
@@ -148,143 +149,6 @@ function nitpick.authorize(payload)
 	vim.notify(string.format(pattern, host), vim.log.levels.INFO)
 end
 
--- FIXME: this is not testable. we need to fix that.
----@param payload DispatchPayload
-function nitpick.add_comment(payload)
-	assert_nitpick()
-
-	---@type string
-	local file = vim.fn.expand("%")
-	if not nitpick.lib:is_tracked_file(file) then
-		-- FIXME: this should be an error, but that triggers an error in the
-		-- integration tests.
-		vim.notify("Cannot comment on an untracked file.", vim.log.levels.WARN)
-		return
-	end
-
-	--- @type Comment
-	local comment = {
-		line_start = payload.line_start,
-		-- FIXME: should we just make end be the same as start if it's one line?
-		line_end = payload.line_end == payload.line_start and 0 or payload.line_end,
-		file = file,
-		text = "",
-	}
-
-	local buf = buffer.split_make("nitpick comment")
-	buffer.add_write_autocmd(buf, function(lines)
-		comment.text = table.concat(lines, "\n")
-		local success = nitpick.lib:add_comment(comment)
-
-		if not success then
-			vim.notify("Unable to add comment.", vim.log.levels.ERROR)
-		end
-	end)
-end
-
-local activity_title = "nitpick activity"
-function nitpick.load_activity()
-	assert_nitpick()
-
-	local events = nitpick.lib:activity()
-
-	-- FIXME: there will always be another tab that gets open. we'll have to
-	-- add some logic to find the open tab and create a new one if it doesn't
-	-- exist.
-	vim.cmd("tabnew")
-	local existing_buf = vim.fn.bufnr(activity_title)
-
-	local buf = existing_buf ~= -1 and existing_buf or vim.api.nvim_create_buf(true, true)
-	vim.api.nvim_buf_set_option(buf, "readonly", false)
-	vim.api.nvim_set_current_buf(buf)
-
-	local lines = vim.split(events, "\n")
-	vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
-
-	vim.api.nvim_buf_set_name(buf, activity_title)
-	vim.api.nvim_win_set_cursor(0, { 1, 0 })
-	vim.api.nvim_buf_set_option(buf, "readonly", true)
-
-	-- FIXME: let's refactor the way we get the activity log so that we don't need
-	-- to do as much processing. if we can just have an array of events, we could
-	-- build call print on the event and get the block to write out here and
-	-- we'll have all the information so we don't have to parse it.
-	-- another option would be to call to zig to calculate the positions and
-	-- return those. then it's just a mapping funciton here.
-
-	---@class BlockTarget
-	---@field file string Path to the target file.
-	---@field line_start number Line where the comment begins.
-	---@field line_end number? Line where the comment ends. Not always present.
-
-	---@class Block
-	---@field line_start number The starting position of the block
-	---@field line_end number The ending position of the block
-	---@field target BlockTarget
-
-	---@type Block[]
-	local blocks = {}
-
-	---@type number[]
-	local headers = {}
-	for i, line in ipairs(lines) do
-		if line:match("^.+%s+added a comment:$") then
-			table.insert(headers, i)
-		end
-	end
-
-	for i, start_pos in ipairs(headers) do
-		-- The header will always be followed by the position description of what the
-		-- file is and the line numbers.
-		local descriptor = lines[start_pos + 1]
-		local pattern = "%[([^%]]+)%s+%((%d+)%s*%-?%s*(%d*)%)%]"
-		local file, line_start, line_end = descriptor:match(pattern)
-
-		local end_pos = headers[i + 1] or #lines
-		table.insert(blocks, {
-			line_start = start_pos,
-			line_end = end_pos - 1,
-			target = {
-				file = file,
-				line_start = tonumber(line_start),
-				line_end = tonumber(line_end),
-			},
-		})
-	end
-
-	vim.api.nvim_buf_clear_namespace(buf, np_namespace, 0, -1)
-	for _, block in ipairs(blocks) do
-		vim.api.nvim_buf_set_extmark(buf, np_namespace, block.line_start, 0, {
-			end_line = block.line_end,
-			virt_text = { { "◆", "Comment" } },
-			virt_text_pos = "right_align",
-		})
-	end
-
-	vim.keymap.set("n", "gd",
-		function()
-			local current_line = vim.api.nvim_win_get_cursor(0)[1]
-
-			for _, block in ipairs(blocks) do
-				if current_line >= block.line_start and current_line <= block.line_end then
-					local file_buf = vim.fn.bufadd(block.target.file)
-
-					local existing_file_buf = vim.fn.bufwinid(file_buf)
-					if existing_file_buf ~= -1 then
-						vim.api.nvim_set_current_win(existing_file_buf)
-					else
-						vim.api.nvim_set_current_buf(file_buf)
-					end
-
-					vim.api.nvim_win_set_cursor(0, { block.target.line_start, 0 })
-					return
-				end
-			end
-		end,
-		{ buffer = buf, desc = "Go to the comment in the file." }
-	)
-end
-
 function nitpick.open_notes()
 	assert_nitpick()
 
@@ -352,7 +216,9 @@ function nitpick.range_start_review(payload)
 		vim.cmd(string.format("DiffviewFileHistory --range=%s..HEAD", commit))
 	else
 		onboarder.start(function(selected_commit)
-			vim.cmd(string.format("DiffviewFileHistory --range=%s..HEAD", selected_commit))
+			vim.cmd(
+				string.format("DiffviewFileHistory --range=%s..HEAD", selected_commit)
+			)
 		end)
 	end
 end

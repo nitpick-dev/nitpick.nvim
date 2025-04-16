@@ -23,8 +23,6 @@ void np_free(np_ctx ctx);
 bool np_authorize(np_ctx ctx, char* host, char* token);
 
 bool np_is_tracked_file(np_ctx ctx, char* file_path);
-bool np_add_comment(np_ctx ctx, np_comment* comment);
-int np_activity(np_ctx ctx, char* buf);
 
 int np_start_review(np_ctx ctx, char* buf);
 int np_end_review(np_ctx ctx, char* buf);
@@ -126,23 +124,6 @@ function lib:is_tracked_file(file_path)
 	return libnitpick.np_is_tracked_file(self.ctx, c_file_path)
 end
 
---- @param comment Comment
---- @return boolean success
-function lib:add_comment(comment)
-	local c_comment = ffi.new("np_comment", comment)
-
-	return libnitpick.np_add_comment(self.ctx, c_comment)
-end
-
---- @return string
-function lib:activity()
-	local buf = ffi.new("char[?]", 5120)
-
-	-- FIXME: at some point, it'll probably be good for this to be async
-	local len = libnitpick.np_activity(self.ctx, buf)
-	return ffi.string(buf, len)
-end
-
 --- Starts a review. If a review was previously conducted, this will start from
 --- the ending commit of the previous review. Nothing is returned otherwise.
 --- @return string
@@ -192,17 +173,6 @@ function lib.create_buffer(buf)
 			return c_contents
 		end),
 	})
-end
-
--- FIXME: the buffer should be cdata, can we do that?
---- @param buf NpBuffer
---- @param location Location
-function lib:write_comment(buf, location)
-	return libnitpick.np_write_comment(
-		self.ctx,
-		buf,
-		ffi.new("np_location", location)
-	)
 end
 
 return lib
