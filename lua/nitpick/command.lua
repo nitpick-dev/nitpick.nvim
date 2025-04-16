@@ -18,8 +18,8 @@ local dispatch_map = {
 	-- but there's an issue with stubbing in the tests where the stub doesn't
 	-- stub..
 	["authorize"] = "authorize",
-	["activity"] = "load_activity",
-	["comment"] = "add_comment",
+	["activity"] = "activity",
+	["comment"] = "comment",
 	["notes"] = "open_notes",
 	["tasks"] = "open_tasks",
 	["end"] = "end_review",
@@ -30,7 +30,7 @@ local dispatch_map = {
 	-- but not considered stable. The actual functions are defined in the sub
 	-- commands in `command.complete`, but the `next` function will handle actual
 	-- dispatching after the args have been processed.
-	["next"] = "next",
+	-- ["next"] = "next",
 }
 
 --- @param args string[]
@@ -54,7 +54,7 @@ function command.complete(cmd_line)
 		-- The sub command for next is the list of functions included in the next
 		-- release. Use the function name as it would appear in the dispatch map. If
 		-- there is nothing for the next release, this may be empty.
-		["next"] = { "comment", "activity" },
+		-- ["next"] = {},
 	}
 
 	local tokens = vim.split(cmd_line, "%s+")

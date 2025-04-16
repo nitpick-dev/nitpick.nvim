@@ -79,14 +79,14 @@ describe("command", function()
 		end)
 
 		test("activity command", function()
-			local activity = stub(nitpick, "load_activity")
+			local activity = stub(nitpick, "activity")
 
 			assert.is_true(command.dispatch({ "activity" }))
 			assert.stub(activity).was.called(1)
 		end)
 
 		test("add a comment", function()
-			local comment = stub(nitpick, "add_comment")
+			local comment = stub(nitpick, "comment")
 
 			assert.is_true(command.dispatch({ "comment" }))
 			assert.stub(comment).was.called(1)
