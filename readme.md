@@ -34,7 +34,6 @@ return {
 { "nitpick-dev/nitpick.nvim", build = "sh install.sh" }
 ```
 
-
 ## Requirements
 
 nitpick has a philosophy of embedding in the ecosystem. If there is a canonical
@@ -70,6 +69,21 @@ starting point using a picker.
 ## Setup
 
 `require('nitpick').setup()`
+
+If you are a delveloper, the setup method can take a set of options which
+include a path to the lib binary to override the default.
+
+## Authentication
+
+nitpick does not host any source code. Instead, we rely on a platform like
+GitHub (which is currently the only host that is supported). In order to access
+repositories, it is required to provide a PAT. Eventually, we will build in an
+auth mechanism, but for now you need to run the command
+`Nitpick authorize github <YOUR_PATH`. We have tab completions through github.
+
+If you would like to edit, view, or delete the pat, it is currently stored in
+`$HOME/.local/share/nitpick/config`. You may edit this file, but it may cause
+unexpected issues with the rest of nitpick.
 
 # Usage
 
