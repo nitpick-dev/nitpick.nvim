@@ -1,5 +1,7 @@
 local ffi = require("ffi")
 
+local legacy_lib = require("nitpick.lib")
+
 ffi.cdef([[
 typedef void* np_ctx;
 
@@ -34,16 +36,30 @@ char* np_get_error_msg(np_error_code);
 
 local np = {}
 
+--- @type ffi.namespace*?
+local lib = nil
+
+--- Load the libnitpick library
+--- @param lib_path_override string? User profivded path to libnitpick.
 --- @return boolean ok
---- @return ffi.namespace*? lib
-function np.setup()
-	-- FIXME: this should be called once at startup of the app. for now, we'll
-	-- allow it to be called per fucntion. additionally, we're looking for an env
-	-- var. this is only intended for development purposes while we're building
-	-- out this alternative file. we should rely on the user's configuration like
-	-- we do in `lib/init.lua`.
-	local lib_path = vim.fn.expand(vim.env.LIB_PATH)
-	return pcall(ffi.load, lib_path)
+function np.setup(lib_path_override)
+
+	local ext = vim.loop.os_uname().sysname:lower() == "linux" and "so" or "dylib"
+
+	local default_lib_path = string.format("~/.local/bin/libnitpick.%s", ext)
+	local lib_path = vim.fn.expand(lib_path_override or default_lib_path)
+
+	local ok, library = pcall(ffi.load, lib_path)
+	if not ok then
+		return false
+	end
+
+	lib = library
+
+	-- FIXME: we shouldn't have two files that we need to have set up.
+	legacy_lib.setup(lib)
+
+	return true
 end
 
 --- An abstraction defined by libnitpick to allow the library to update,
@@ -61,8 +77,8 @@ end
 --- @return boolean success `true` if the operation is successfule, `false` otherwise. When `false`, `error_message` will be present.
 --- @return string? error_message Human readible error message provided by the library. This will only be present when `success` is true.
 function np.get_activity(ctx, buf_handle)
-	local ok, lib = np.setup()
-	if not ok  or lib == nil then
+	-- FIXME: assert the lib was set up correctly
+	if lib == nil then
 		return false, "Failed to load library"
 	end
 
@@ -123,8 +139,7 @@ end
 --- @return boolean success `true` if the operation is successfule, `false` otherwise. When `false`, `error_message` will be present.
 --- @return string? error_message Human readible error message provided by the library. This will only be present when `success` is true.
 function np.write_comment(ctx, buf_handle, location)
-	local ok, lib = np.setup()
-	if not ok  or lib == nil then
+	if lib == nil then
 		return false, "Failed to load library"
 	end
 

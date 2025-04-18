@@ -38,6 +38,11 @@ local lib = {
 	ctx = nil,
 }
 
+--- @param legacy_lib ffi.namespace* The loaded lib. This is initialized in the newer `np.lua` file and forwarded here for backwoard compatibilty
+function lib.setup(legacy_lib)
+	libnitpick = legacy_lib
+end
+
 --- Load libnitpick
 --- @param lib_path_override string? User provided override path to libnitpick.
 --- @return boolean success

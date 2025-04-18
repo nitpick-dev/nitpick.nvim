@@ -33,7 +33,7 @@ end
 function nitpick.setup(user_opts)
 	local opts = user_opts or {}
 
-	local ok = lib.load(opts.lib_path)
+	local ok = np.setup(opts.lib_path)
 	if not ok then
 		vim.notify("Failed to load libnitpick", vim.log.levels.ERROR)
 		return
