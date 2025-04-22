@@ -3,6 +3,7 @@ local stub = require("luassert.stub")
 
 local nitpick = require("nitpick")
 local lib = require("nitpick.lib")
+local np = require("nitpick.np")
 local onboarder = require("nitpick.onboarder")
 
 local test = it
@@ -15,7 +16,7 @@ describe("nitpick", function()
 	test("authorize a host", function()
 		local log = stub(vim, "notify")
 
-		local authorize = stub(lib, "authorize")
+		local authorize = stub(np, "authorize")
 		authorize.returns(true)
 
 		nitpick.authorize({ args = { "github", "some_token" } })

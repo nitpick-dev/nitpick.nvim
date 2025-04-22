@@ -29,12 +29,24 @@ typedef enum {
 	comment_write_failure,
 } np_error_code;
 
+// NOTE: data_path and server_url are optional
+np_ctx np_new(char* repo_name, char* data_path, char* server_url);
+void np_free(np_ctx ctx);
+
+bool np_authorize(np_ctx ctx, char* host, char* token);
+
 np_error_code np_get_activity(np_ctx ctx, np_buf_handle* handle);
 np_error_code np_write_comment(np_ctx ctx, np_buf_handle* handle, np_location* location);
 char* np_get_error_msg(np_error_code);
 ]])
 
-local np = {}
+--- Holds the context for the current nitpick instance.
+--- @alias NpCtx ffi.cdata*
+
+local np = {
+	--- @type ffi.namespace*
+	lib = nil,
+}
 
 --- @type ffi.namespace*?
 local lib = nil
@@ -43,7 +55,6 @@ local lib = nil
 --- @param lib_path_override string? User profivded path to libnitpick.
 --- @return boolean ok
 function np.setup(lib_path_override)
-
 	local ext = vim.loop.os_uname().sysname:lower() == "linux" and "so" or "dylib"
 
 	local default_lib_path = string.format("~/.local/bin/libnitpick.%s", ext)
@@ -54,12 +65,75 @@ function np.setup(lib_path_override)
 		return false
 	end
 
+	-- FIXME: we should remove this an use np.lib
 	lib = library
+	np.lib = library
 
 	-- FIXME: we shouldn't have two files that we need to have set up.
 	legacy_lib.setup(lib)
 
 	return true
+end
+
+--- Allocates a new c string from an optional string. When no string is
+--- provided, nil will always be returned.
+---
+--- The data should be cleaned by normal garbage collection.
+--- @param str? string The string to convert to a c string.
+--- @return ffi.cdata* | nil
+local function create_c_str(str)
+	if str == nil then
+		return nil
+	end
+
+	local c_str = ffi.new("char[?]", #str + 1)
+	ffi.copy(c_str, str)
+
+	return c_str
+end
+
+--- User provided overrides for the nitpick editor instance. This is mostly
+--- useful for development purposes, but users are free to configure all, some,
+--- or none of them.
+--- @class NpOverrides
+--- @field data_path? string Path to data storage. Defaults to nitpick data dir.
+--- @field server_url? string Path to server instance. Defaults to main instance.
+
+--- Create a new isntace of nitpick. There should only ever be one per editor
+--- instance, though there is nothing preventing a user from createing multiple.
+--- @param repo_name string
+--- @param overrides NpOverrides
+--- @return NpCtx
+function np.new(repo_name, overrides)
+	local c_repo_name = create_c_str(repo_name)
+	local c_data_path = create_c_str(overrides.data_path)
+	local c_server_url = create_c_str(overrides.server_url)
+
+	local ctx = np.lib.np_new(c_repo_name, c_data_path, c_server_url)
+
+	-- Ensure that the context is removed before neovim exits.
+	vim.api.nvim_create_autocmd("VimLeavePre", {
+		callback = function()
+			np.lib.np_free(ctx)
+		end,
+	})
+
+	return ctx
+end
+
+--- Configure authentication for a particular host.
+--- @param ctx NpCtx
+--- @param host string
+--- @param token string A PAT or other token defined by the host.
+--- @return boolean succeess
+function np.authorize(ctx, host, token)
+	assert(host ~= nil, "A host is required.")
+	assert(token ~= nil, "A token is required.")
+
+	local c_host = create_c_str(host)
+	local c_token = create_c_str(token)
+
+	return np.lib.np_authorize(ctx, c_host, c_token)
 end
 
 --- An abstraction defined by libnitpick to allow the library to update,

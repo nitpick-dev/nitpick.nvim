@@ -16,6 +16,7 @@ local onboarder = require("nitpick.onboarder")
 
 ---@class NitpickConfig
 ---@field lib Nitpick?
+---@field ctx NpCtx
 local nitpick = {
 	lib = nil,
 }
@@ -40,7 +41,14 @@ function nitpick.setup(user_opts)
 	end
 
 	local repo_name = vim.fs.basename(vim.fn.getcwd())
-	nitpick.lib = lib:new(repo_name, opts.data_path, opts.server_url)
+
+	nitpick.ctx = np.new(repo_name, {
+		data_path = opts.data_path,
+		server_url = opts.server_url,
+	})
+
+	-- FIXME: this should be removed once the full refactor is complete
+	nitpick.lib = lib:new(nitpick.ctx)
 end
 
 --- Dispatch handler for the next version of nitpick. In this case, the payload
@@ -139,10 +147,8 @@ function nitpick.authorize(payload)
 	local host = payload.args[1]
 	local token = payload.args[2]
 
-	local authorized = nitpick.lib:authorize(host, token)
-
-	---@type string
-	local pattern = authorized
+	local ok = np.authorize(nitpick.ctx, host, token)
+	local pattern = ok
 			and "%s was successfully authorized."
 			or "failed to authorize %s."
 
