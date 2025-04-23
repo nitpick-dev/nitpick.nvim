@@ -1,7 +1,5 @@
 local ffi = require("ffi")
 
-local legacy_lib = require("nitpick.lib")
-
 ffi.cdef([[
 typedef void* np_ctx;
 
@@ -34,10 +32,19 @@ np_ctx np_new(char* repo_name, char* data_path, char* server_url);
 void np_free(np_ctx ctx);
 
 bool np_authorize(np_ctx ctx, char* host, char* token);
+bool np_is_tracked_file(np_ctx ctx, char* file_path);
+
+int np_start_review(np_ctx, char* buf);
+int np_end_review(np_ctx, char* buf);
 
 np_error_code np_get_activity(np_ctx ctx, np_buf_handle* handle);
 np_error_code np_write_comment(np_ctx ctx, np_buf_handle* handle, np_location* location);
 char* np_get_error_msg(np_error_code);
+
+// These are our experimental features for some long term nitpick stuff. They
+// can be used, but the data format and the apis are likely to change.
+int np_notes_path(np_ctx ctx, char* buf);
+int np_tasks_path(np_ctx ctx, char* buf);
 ]])
 
 --- Holds the context for the current nitpick instance.
@@ -55,7 +62,7 @@ local lib = nil
 --- @param lib_path_override string? User profivded path to libnitpick.
 --- @return boolean ok
 function np.setup(lib_path_override)
-	local ext = vim.loop.os_uname().sysname:lower() == "linux" and "so" or "dylib"
+	local ext = vim.uv.os_uname().sysname:lower() == "linux" and "so" or "dylib"
 
 	local default_lib_path = string.format("~/.local/bin/libnitpick.%s", ext)
 	local lib_path = vim.fn.expand(lib_path_override or default_lib_path)
@@ -68,9 +75,6 @@ function np.setup(lib_path_override)
 	-- FIXME: we should remove this an use np.lib
 	lib = library
 	np.lib = library
-
-	-- FIXME: we shouldn't have two files that we need to have set up.
-	legacy_lib.setup(lib)
 
 	return true
 end
@@ -156,7 +160,7 @@ function np.get_activity(ctx, buf_handle)
 		return false, "Failed to load library"
 	end
 
-	local error_code = lib.np_get_activity(ctx, buf_handle)
+	local error_code = np.lib.np_get_activity(ctx, buf_handle)
 	local success = tonumber(error_code) == 0
 
 	--- @type string?
@@ -168,10 +172,45 @@ function np.get_activity(ctx, buf_handle)
 	return success, error_msg
 end
 
--- FIXME: should the a neovim buffer be created with this as well? should we
--- just make all the buffer operactions with a buf handle? should there be a
--- separation?
---
+--- Determine if the file at the `file_path` is tracked in version control.
+--- @param ctx NpCtx
+--- @param file_path string
+--- @return boolean
+function np.is_tracked_file(ctx, file_path)
+	local c_file_path = ffi.new("char[?]", #file_path + 1)
+	ffi.copy(c_file_path, file_path)
+
+	return np.lib.np_is_tracked_file(ctx, c_file_path)
+end
+
+--- Load the last reviewed commit. If no review has been saved, a nil value is
+--- returned.
+--- @param ctx NpCtx
+--- @return string? commit The commit to open in diff.
+function np.start_review(ctx)
+	--- FIXME: we should enforce that this is a 7 character array.
+	local buf = ffi.new("char[?]", 100)
+	local len = np.lib.np_start_review(ctx, buf)
+
+	if len == 0 then
+		return nil
+	end
+
+	return ffi.string(buf, len)
+end
+
+--- Save the current version control commit to become the starting point for the
+--- next `start_review` call.
+--- @param ctx NpCtx
+--- @return string? commit The saved commit. A `nil` response means nothing was saved.
+function np.end_review(ctx)
+	--- FIXME: we should enforce that this is a 7 character array.
+	local buf = ffi.new("char[?]", 100)
+	local len = np.lib.np_end_review(ctx, buf)
+
+	return ffi.string(buf, len)
+end
+
 --- Create a new buffer handle to pass to libnitpick.
 --- @param buf VimBuffer
 --- @return NpBufHandle
@@ -227,6 +266,35 @@ function np.write_comment(ctx, buf_handle, location)
 	end
 
 	return success, error_msg
+end
+
+--- Load the path to nitpick custom data for the repo.
+---
+--- This is an experimental feature that is likely to change. There are no
+--- protections around it. It is just a file on the file system, allow a user to
+--- do whatever they want with it, with the directory it is in, or really
+--- anything that could be thought of. We will not, for now, be defending
+--- against that. If a user messes it up, that is the fault of the user.
+--- @param ctx NpCtx
+--- @param file_type "notes" | "tasks"
+--- @return string? path The path to the requested file.
+function np.get_file_path(ctx, file_type)
+	assert(
+		file_type == "notes" or file_type == "tasks",
+		"File type must be one of \"notes\" or \"tasks\""
+	)
+
+	local buf = ffi.new("char[?]", 100)
+	--- @type number
+	local len
+
+	if file_type == "notes" then
+		len = np.lib.np_notes_path(ctx, buf)
+	elseif file_type == "tasks" then
+		len = np.lib.np_tasks_path(ctx, buf)
+	end
+
+	return ffi.string(buf, len)
 end
 
 return np

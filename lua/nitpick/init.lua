@@ -5,7 +5,6 @@ if not has_diffview then
 end
 
 local buffer = require("nitpick.buffer")
-local lib = require("nitpick.lib")
 local np = require("nitpick.np")
 local onboarder = require("nitpick.onboarder")
 
@@ -15,17 +14,14 @@ local onboarder = require("nitpick.onboarder")
 --- @field server_url? string Overrides the default nitpick server url.
 
 ---@class NitpickConfig
----@field lib Nitpick?
 ---@field ctx NpCtx
-local nitpick = {
-	lib = nil,
-}
+local nitpick = { }
 
 ---Asserts that the nitpick library has been initialized. This will cause a
 ---crash, and there is no attempt at recovery.
 local function assert_nitpick()
 	assert(
-		nitpick.lib ~= nil,
+		nitpick.ctx ~= nil,
 		"nitpick was not initialized or initialized incorrectly."
 	)
 end
@@ -46,9 +42,6 @@ function nitpick.setup(user_opts)
 		data_path = opts.data_path,
 		server_url = opts.server_url,
 	})
-
-	-- FIXME: this should be removed once the full refactor is complete
-	nitpick.lib = lib:new(nitpick.ctx)
 end
 
 --- Dispatch handler for the next version of nitpick. In this case, the payload
@@ -76,7 +69,7 @@ function nitpick.comment(payload)
 	assert_nitpick()
 
 	local file = vim.fn.expand("%")
-	if not nitpick.lib:is_tracked_file(file) then
+	if not np.is_tracked_file(nitpick.ctx, file) then
 		-- FIXME: this should be an error, but that triggers an error in the
 		-- integration tests.
 		vim.notify("Cannot comment on an untracked file.", vim.log.levels.WARN)
@@ -98,7 +91,7 @@ function nitpick.comment(payload)
 		)
 
 		local success, err_msg = np.write_comment(
-			nitpick.lib.ctx,
+			nitpick.ctx,
 			buf_handle,
 			location
 		)
@@ -130,7 +123,7 @@ function nitpick.activity()
 	vim.api.nvim_buf_set_option(buf, "readonly", false)
 
 	-- FIXME: handle error
-	np.get_activity(nitpick.lib.ctx, buf_handle)
+	np.get_activity(nitpick.ctx, buf_handle)
 
 	-- We don't want users to be able to modify anything in this buffer (or
 	-- accidentally save it) after we set the contents, so we set it to readonly.
@@ -158,7 +151,7 @@ end
 function nitpick.open_notes()
 	assert_nitpick()
 
-	local note_path = nitpick.lib:notes_path()
+	local note_path = np.get_file_path(nitpick.ctx, "notes")
 	if note_path == "" then
 		vim.notify("Could not open notes.", vim.log.levels.ERROR)
 		return
@@ -171,7 +164,7 @@ end
 function nitpick.open_tasks()
 	assert_nitpick()
 
-	local todo_path = nitpick.lib:tasks_path()
+	local todo_path = np.get_file_path(nitpick.ctx, "tasks")
 	if todo_path == "" then
 		vim.notify("Could not open tasks.", vim.log.levels.ERROR)
 		return
@@ -193,8 +186,8 @@ function nitpick.start_review(payload)
 		return
 	end
 
-	local commit = nitpick.lib:start_review()
-	if commit ~= nil and commit ~= "" then
+	local commit = np.start_review(nitpick.ctx)
+	if commit ~= nil then
 		diffview.open(commit, "HEAD")
 	else
 		onboarder.start(function(selected_commit)
@@ -217,8 +210,8 @@ function nitpick.range_start_review(payload)
 		return
 	end
 
-	local commit = nitpick.lib:start_review()
-	if commit ~= nil and commit ~= "" then
+	local commit = np.start_review(nitpick.ctx)
+	if commit ~= nil then
 		vim.cmd(string.format("DiffviewFileHistory --range=%s..HEAD", commit))
 	else
 		onboarder.start(function(selected_commit)
@@ -232,7 +225,10 @@ end
 function nitpick.end_review()
 	assert_nitpick()
 
-	local commit = nitpick.lib:end_review()
+	local commit = np.end_review(nitpick.ctx)
+	if commit == nil then
+		vim.notify("Unable to save current review", vim.log.levels.ERROR)
+	end
 
 	vim.notify("Review completed at commit " .. commit, vim.log.levels.INFO)
 	diffview.close()

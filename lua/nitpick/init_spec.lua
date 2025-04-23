@@ -2,7 +2,6 @@ local diffview = require("diffview")
 local stub = require("luassert.stub")
 
 local nitpick = require("nitpick")
-local lib = require("nitpick.lib")
 local np = require("nitpick.np")
 local onboarder = require("nitpick.onboarder")
 
@@ -10,7 +9,7 @@ local test = it
 
 describe("nitpick", function()
 	before_each(function()
-		nitpick.lib = lib
+		stub(nitpick, "ctx")
 	end)
 
 	test("authorize a host", function()
@@ -38,8 +37,8 @@ describe("nitpick", function()
 	test("start onboarding if no previous review was found", function()
 		local onboarder_start = stub(onboarder, "start")
 
-		local start_review = stub(lib, "start_review")
-		start_review.returns("")
+		local start_review = stub(np, "start_review")
+		start_review.returns(nil)
 
 		nitpick.start_review({ args = {} })
 
@@ -49,7 +48,7 @@ describe("nitpick", function()
 	test("start a review", function()
 		local diffview_open = stub(diffview, "open")
 
-		local start_review = stub(lib, "start_review")
+		local start_review = stub(np, "start_review")
 		start_review.returns("abc123")
 
 		nitpick.start_review({ args = {} })
@@ -59,7 +58,7 @@ describe("nitpick", function()
 
 	test("start a review from arbitrary commit", function()
 		local diffview_open = stub(diffview, "open")
-		local start_review = stub(lib, "start_review")
+		local start_review = stub(np, "start_review")
 
 		nitpick.start_review({ args = { "xyz123" } })
 
@@ -69,7 +68,7 @@ describe("nitpick", function()
 
 	test("end a review", function()
 		local diffview_close = stub(diffview, "close")
-		local end_review = stub(lib, "end_review")
+		local end_review = stub(np, "end_review")
 		end_review.returns("xyz123")
 
 		nitpick.end_review()
