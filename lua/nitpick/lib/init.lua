@@ -1,5 +1,8 @@
 local ffi = require("ffi")
+local utils = require("nitpick.lib.c_utils")
 
+-- FIXME: once we have more editor plugins, we'll need to move this to a shared
+-- location.
 ffi.cdef([[
 typedef void* np_ctx;
 
@@ -47,16 +50,10 @@ int np_notes_path(np_ctx ctx, char* buf);
 int np_tasks_path(np_ctx ctx, char* buf);
 ]])
 
---- Holds the context for the current nitpick instance.
---- @alias NpCtx ffi.cdata*
-
 local np = {
 	--- @type ffi.namespace*
 	lib = nil,
 }
-
---- @type ffi.namespace*?
-local lib = nil
 
 --- Load the libnitpick library
 --- @param lib_path_override string? User profivded path to libnitpick.
@@ -72,28 +69,9 @@ function np.setup(lib_path_override)
 		return false
 	end
 
-	-- FIXME: we should remove this an use np.lib
-	lib = library
 	np.lib = library
 
 	return true
-end
-
---- Allocates a new c string from an optional string. When no string is
---- provided, nil will always be returned.
----
---- The data should be cleaned by normal garbage collection.
---- @param str? string The string to convert to a c string.
---- @return ffi.cdata* | nil
-local function create_c_str(str)
-	if str == nil then
-		return nil
-	end
-
-	local c_str = ffi.new("char[?]", #str + 1)
-	ffi.copy(c_str, str)
-
-	return c_str
 end
 
 --- User provided overrides for the nitpick editor instance. This is mostly
@@ -109,9 +87,9 @@ end
 --- @param overrides NpOverrides
 --- @return NpCtx
 function np.new(repo_name, overrides)
-	local c_repo_name = create_c_str(repo_name)
-	local c_data_path = create_c_str(overrides.data_path)
-	local c_server_url = create_c_str(overrides.server_url)
+	local c_repo_name = utils.create_c_str(repo_name)
+	local c_data_path = utils.create_c_str(overrides.data_path)
+	local c_server_url = utils.create_c_str(overrides.server_url)
 
 	local ctx = np.lib.np_new(c_repo_name, c_data_path, c_server_url)
 
@@ -131,34 +109,24 @@ end
 --- @param token string A PAT or other token defined by the host.
 --- @return boolean succeess
 function np.authorize(ctx, host, token)
+	assert(np.lib ~= nil, "libnitpick has not been initialized.")
+	assert(ctx ~= nil, "An initialized context is required.")
 	assert(host ~= nil, "A host is required.")
 	assert(token ~= nil, "A token is required.")
 
-	local c_host = create_c_str(host)
-	local c_token = create_c_str(token)
+	local c_host = utils.create_c_str(host)
+	local c_token = utils.create_c_str(token)
 
 	return np.lib.np_authorize(ctx, c_host, c_token)
 end
-
---- An abstraction defined by libnitpick to allow the library to update,
---- decorate, and read text from an editor buffer.
---- @class NpBufHandle
-
--- FIXME: this "location" name is not very descriptive. we can probably come up
--- with something better.
---
---- A common structure for specifiying metadata for an event.
---- @class NpLocation
 
 --- @param buf_handle NpBufHandle
 --- @param ctx ffi.cdata*
 --- @return boolean success `true` if the operation is successfule, `false` otherwise. When `false`, `error_message` will be present.
 --- @return string? error_message Human readible error message provided by the library. This will only be present when `success` is true.
 function np.get_activity(ctx, buf_handle)
-	-- FIXME: assert the lib was set up correctly
-	if lib == nil then
-		return false, "Failed to load library"
-	end
+	assert(np.lib ~= nil, "libnitpick has not been initialized.")
+	assert(ctx ~= nil, "An initialized context is required.")
 
 	local error_code = np.lib.np_get_activity(ctx, buf_handle)
 	local success = tonumber(error_code) == 0
@@ -166,7 +134,7 @@ function np.get_activity(ctx, buf_handle)
 	--- @type string?
 	local error_msg = nil
 	if not success then
-		error_msg = ffi.string(lib.np_get_error_msg(error_code))
+		error_msg = ffi.string(np.lib.np_get_error_msg(error_code))
 	end
 
 	return success, error_msg
@@ -177,9 +145,10 @@ end
 --- @param file_path string
 --- @return boolean
 function np.is_tracked_file(ctx, file_path)
-	local c_file_path = ffi.new("char[?]", #file_path + 1)
-	ffi.copy(c_file_path, file_path)
+	assert(np.lib ~= nil, "libnitpick has not been initialized.")
+	assert(ctx ~= nil, "An initialized context is required.")
 
+	local c_file_path = utils.create_c_str(file_path)
 	return np.lib.np_is_tracked_file(ctx, c_file_path)
 end
 
@@ -188,6 +157,9 @@ end
 --- @param ctx NpCtx
 --- @return string? commit The commit to open in diff.
 function np.start_review(ctx)
+	assert(np.lib ~= nil, "libnitpick has not been initialized.")
+	assert(ctx ~= nil, "An initialized context is required.")
+
 	--- FIXME: we should enforce that this is a 7 character array.
 	local buf = ffi.new("char[?]", 100)
 	local len = np.lib.np_start_review(ctx, buf)
@@ -204,6 +176,9 @@ end
 --- @param ctx NpCtx
 --- @return string? commit The saved commit. A `nil` response means nothing was saved.
 function np.end_review(ctx)
+	assert(np.lib ~= nil, "libnitpick has not been initialized.")
+	assert(ctx ~= nil, "An initialized context is required.")
+
 	--- FIXME: we should enforce that this is a 7 character array.
 	local buf = ffi.new("char[?]", 100)
 	local len = np.lib.np_end_review(ctx, buf)
@@ -221,8 +196,7 @@ function np.make_buf_handle(buf)
 		get_text = ffi.cast("np_buf_get_text_fn", function()
 			local lines = vim.api.nvim_buf_get_lines(0, 0, -1, true)
 			local contents = table.concat(lines, "\n");
-			local c_contents = ffi.new("char[?]", #contents + 1)
-			ffi.copy(c_contents, contents)
+			local c_contents = utils.create_c_str(contents)
 
 			return c_contents
 		end),
@@ -252,17 +226,16 @@ end
 --- @return boolean success `true` if the operation is successfule, `false` otherwise. When `false`, `error_message` will be present.
 --- @return string? error_message Human readible error message provided by the library. This will only be present when `success` is true.
 function np.write_comment(ctx, buf_handle, location)
-	if lib == nil then
-		return false, "Failed to load library"
-	end
+	assert(np.lib ~= nil, "libnitpick has not been initialized.")
+	assert(ctx ~= nil, "An initialized context is required.")
 
-	local error_code = lib.np_write_comment(ctx, buf_handle, location)
+	local error_code = np.lib.np_write_comment(ctx, buf_handle, location)
 	local success = tonumber(error_code) == 0
 
 	--- @type string?
 	local error_msg = nil
 	if not success then
-		error_msg = ffi.string(lib.np_get_error_msg(error_code))
+		error_msg = ffi.string(np.lib.np_get_error_msg(error_code))
 	end
 
 	return success, error_msg
@@ -279,14 +252,16 @@ end
 --- @param file_type "notes" | "tasks"
 --- @return string? path The path to the requested file.
 function np.get_file_path(ctx, file_type)
+	assert(np.lib ~= nil, "libnitpick has not been initialized.")
+	assert(ctx ~= nil, "An initialized context is required.")
 	assert(
 		file_type == "notes" or file_type == "tasks",
 		"File type must be one of \"notes\" or \"tasks\""
 	)
 
-	local buf = ffi.new("char[?]", 100)
 	--- @type number
 	local len
+	local buf = ffi.new("char[?]", 100)
 
 	if file_type == "notes" then
 		len = np.lib.np_notes_path(ctx, buf)

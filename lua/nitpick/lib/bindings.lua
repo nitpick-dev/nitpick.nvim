@@ -1,17 +1,14 @@
-local ffi = require("ffi")
+--- An abstraction defined by libnitpick to allow the library to update,
+--- decorate, and read text from an editor buffer.
+--- @alias NpBufHandle ffi.cdata*
 
---- @class Comment
---- @field file string
---- @field line_start number
---- @field line_end number
---- @field text string
+--- Holds the context for the current nitpick instance.
+--- @alias NpCtx ffi.cdata*
 
---- @class NpBuffer
---- @field handle number
---- @field get_text fun(): string
+-- FIXME: this "location" name is not very descriptive. we can probably come up
+-- with something better.
+--
+--- A common structure for specifiying metadata for an event.
+--- @alias NpLocation ffi.ctype*
 
---- @class Location
---- @field line_start number
---- @field line_end number
---- @field file string
 

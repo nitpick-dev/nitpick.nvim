@@ -2,7 +2,7 @@ local diffview = require("diffview")
 local stub = require("luassert.stub")
 
 local nitpick = require("nitpick")
-local np = require("nitpick.np")
+local np = require("nitpick.lib")
 local onboarder = require("nitpick.onboarder")
 
 local test = it

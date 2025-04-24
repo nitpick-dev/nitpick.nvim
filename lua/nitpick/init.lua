@@ -5,7 +5,7 @@ if not has_diffview then
 end
 
 local buffer = require("nitpick.buffer")
-local np = require("nitpick.np")
+local np = require("nitpick.lib")
 local onboarder = require("nitpick.onboarder")
 
 --- @class NitpickOptions
