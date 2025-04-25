@@ -9,32 +9,33 @@ monorepo and released to
 
 **Status:** it might work ¯\\_(ツ)_/¯
 
-# Getting Started
+## Getting Started
 
-## Installation
-
-### Lazy
+### Installation & Setup
 
 ```lua
+# Lazy
 return {
     "nitpick-dev/nitpick.nvim",
     build = "sh install.sh",
 }
-```
 
-### packer / pckr
-
-```lua
+# packer / pkr
 { "nitpick-dev/nitpick.nvim", run = "sh install.sh" }
-```
 
-### paq
-
-```lua
+# paq
 { "nitpick-dev/nitpick.nvim", build = "sh install.sh" }
 ```
 
-## Requirements
+After installing, be sure to call the setup command:
+```lua
+require("nitpick").setup()
+```
+
+If you are a delveloper, the setup method can take a set of options which
+include a path to the lib binary to override the default.
+
+### Requirements
 
 nitpick has a philosophy of embedding in the ecosystem. If there is a canonical
 tool that exists, nitpick will typically prefer to use that over rolling
@@ -46,32 +47,22 @@ installed.
 section, only one needs to be installed; nitpick will automatically detect which
 one to use.
 
-### Diffing tool
+#### Diffing tool
 
 A diffing tool is required to display the diffs while conducting a review.
 
-#### Supported
+The following tools are supported:
+- [diffview](https://github.com/sindrets/diffview.nvim)
 
-[diffview](https://github.com/sindrets/diffview.nvim)
-
-### Pickers
+#### Pickers
 
 When no previous review has been detected, nitpick will prompt the user for a
 starting point using a picker.
 
-#### Supported
+The following tools are supported:
+- [Fzf-Lua](https://github.com/ibhagwan/fzf-lua)
+- [telescope](https://github.com/nvim-telescope/telescope.nvim)
 
-[Fzf-Lua](https://github.com/ibhagwan/fzf-lua)
-
-[telescope](https://github.com/nvim-telescope/telescope.nvim)
-
-
-## Setup
-
-`require('nitpick').setup()`
-
-If you are a delveloper, the setup method can take a set of options which
-include a path to the lib binary to override the default.
 
 ## Authentication
 
@@ -85,27 +76,9 @@ If you would like to edit, view, or delete the pat, it is currently stored in
 `$HOME/.local/share/nitpick/config`. You may edit this file, but it may cause
 unexpected issues with the rest of nitpick.
 
-# Usage
+## Usage
 
 Most commands are available through a single entry point: `Nitpick`.
 
-## start [commit]
+TODO: document
 
-Starts a reivew.
-
-If provided a commit, use that as a starting point for the review. This is
-useful when a review has not yet been conducted, or if including older commits
-is desired. This command does not affect the state of the reviews. Quitting the
-review (`DiffviewClose`, `:qa!`, etc) will preserve the previous commit.
-
-When a previous review has not been detected, a [picker](#pickers) for commits
-will open. The selected commit will become the starting point for the review.
-Similar to passing a speific commit to the `Nitpick start`, this will not affect
-the overall state of reviews. Unless `Nitpick end` was invoked to mark the next
-starting point, a picker will be presented on the next `Nitpick start`.
-
-
-## end
-
-Ends a reivew. The state of the review is updated to the HEAD commit and will
-become the starting point for the next `Nitpick start`.

@@ -1,12 +1,11 @@
 --- A set of utilities for common interactions with vim buffers. This could be
 --- considered the "ui" for nitpick.
 
+--- @alias VimBuffer integer
+
 local np_group = vim.api.nvim_create_augroup("NitpickGroup", { clear = true })
 
 local buffer = {}
-
--- FIXME: figure out what this type is or where we can pull it from
---- @class VimBuffer
 
 --- Opens a split and returns the new buffer.
 --- @param name string The name for the buffer that will be created.
@@ -29,8 +28,8 @@ end
 --- @param buf VimBuffer
 --- @param on_close fun(contents: string[]) The lines of the buffer
 function buffer.add_write_autocmd(buf, on_close)
-	vim.api.nvim_buf_set_option(buf, "buftype", "acwrite")
-	vim.api.nvim_buf_set_option(buf, "bufhidden", "wipe")
+	vim.api.nvim_set_option_value("buftype", "acwrite", { buf = buf })
+	vim.api.nvim_set_option_value("bufhidden", "wipe", { buf = buf })
 
 	-- FIXME: we only call to trigger the on close if the buffer is being written
 	-- and closed. if the buffer is just written, we don't want to do anything. we
@@ -43,7 +42,7 @@ function buffer.add_write_autocmd(buf, on_close)
 
 			on_close(lines)
 
-			vim.api.nvim_buf_set_option(buf, "modified", false)
+			vim.api.nvim_set_option_value("modified", false, { buf = buf })
 			return true
 		end,
 	})

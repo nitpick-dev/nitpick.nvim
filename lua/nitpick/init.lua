@@ -22,7 +22,7 @@ local nitpick = { }
 local function assert_nitpick()
 	assert(
 		nitpick.ctx ~= nil,
-		"nitpick was not initialized or initialized incorrectly."
+		"nitpick is not initialized or initialized incorrectly."
 	)
 end
 
@@ -120,14 +120,14 @@ function nitpick.activity()
 	-- Before updating the contents of the buffer, we need to make sure that it's
 	-- editable. Once the contents have been writte, we can toggle back to a
 	-- readonly buffer.
-	vim.api.nvim_buf_set_option(buf, "readonly", false)
+	vim.api.nvim_set_option_value("readonly", false, { buf = buf })
 
 	-- FIXME: handle error
 	np.get_activity(nitpick.ctx, buf_handle)
 
 	-- We don't want users to be able to modify anything in this buffer (or
 	-- accidentally save it) after we set the contents, so we set it to readonly.
-	vim.api.nvim_buf_set_option(buf, "readonly", true)
+	vim.api.nvim_set_option_value("readonly", true, { buf = buf })
 end
 
 --- Adds a token for a given host to the config file. The `args` of the payload
