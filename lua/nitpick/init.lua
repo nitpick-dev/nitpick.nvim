@@ -15,7 +15,7 @@ local onboarder = require("nitpick.onboarder")
 
 ---@class NitpickConfig
 ---@field ctx NpCtx
-local nitpick = { }
+local nitpick = {}
 
 ---Asserts that the nitpick library has been initialized. This will cause a
 ---crash, and there is no attempt at recovery.
